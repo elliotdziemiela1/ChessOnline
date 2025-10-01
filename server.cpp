@@ -4,7 +4,20 @@
 #pragma comment(lib, "ws2_32.lib") 
 
 #define DEFAULT_PORT "27015"
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 64
+
+// chess board is 8x8 tiles
+
+enum Column {
+    A = 1,
+    B = 2,
+    C = 3,
+    D = 4,
+    E = 5,
+    F = 6,
+    G = 7,
+    H = 8
+};
 
 int main(){
     // WSA startup
@@ -55,6 +68,8 @@ int main(){
     // result is no longer needed so it must be freed
     freeaddrinfo(result);
 
+    printf("Waiting to receive connection from client.\n");
+
     // listening on socket
     if (listen(listenSocket, SOMAXCONN) == SOCKET_ERROR){
         printf("listen() error: %d\n", WSAGetLastError());
@@ -78,15 +93,16 @@ int main(){
 
     // receive and send data on socket
     char recvbuf[DEFAULT_BUFLEN];
-    int iResult, iSendResult;
-    int recvbuflen = DEFAULT_BUFLEN;
+    // recvbuf[DEFAULT_BUFLEN] = '\0'; // end with null for printing purposes. when calling recv function, effective buffer size is DEFAULT_BUFLEN
+    int iSendResult;
 
     // Receive until the peer shuts down the connection (iResult == 0)
     do {
-
-        iResult = recv(clientSocket, recvbuf, recvbuflen, 0);
+        printf("Waiting to receive data from client.\n");
+        iResult = recv(clientSocket, recvbuf, DEFAULT_BUFLEN, 0);
         if (iResult > 0) {
             printf("Bytes received: %d\n", iResult);
+            printf("string received: %s\n", recvbuf);
 
             // Echo the buffer back to the sender
             iSendResult = send(clientSocket, recvbuf, iResult, 0);
