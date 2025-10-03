@@ -199,24 +199,63 @@ $S";
 
     // TODO edit this
     do {
-        printf("Waiting for client 1 to make first move.\n");
+        //////////////////////
+        /// Client 1 move ////
+        //////////////////////
+        printf("Waiting for client 1 to make move.\n");
         if (recv(clientSocketOne,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
             printf("Client 1 receive error: %d\n", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);
             return 1;
         }
         printf("client 1's move: %s", recvbuf);
+        // Now sending confirmation to client 1 and telling them to wait for another message.
+        sendbuf = "Nice move. Now waiting for Black's move.$R";
+        if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("client 1 send error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+
+        // Telling client 2 of the move client 1 just made, and telling it to send a message
         std::string c1move(recvbuf);
         std::string msg("White just moved: ");
         msg = msg+c1move+". Your turn now: $S";
         if (send(clientSocketTwo, msg.c_str(),(int)msg.length(),0) == SOCKET_ERROR){
             printf("Client 2 send error: %d\n", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
         }
-        
 
+        //////////////////////
+        /// Client 2 move ////
+        //////////////////////
+        printf("Waiting for client 2 to make move.\n");
+        if (recv(clientSocketTwo,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
+            printf("Client 2 receive error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+        printf("client 2's move: %s", recvbuf);
+        // Now sending confirmation to client 2 and telling them to wait for another message.
+        sendbuf = "Nice move. Now waiting for White's move.$R";
+        if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("client 2 send error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
 
-    } while (iResult > 0);
+        // Telling client 1 of the move client 2 just made, and telling it to send a message
+        std::string c2move(recvbuf);
+        std::string msg2("Black just moved: ");
+        msg2 = msg2+c2move+". Your turn now: $S";
+        if (send(clientSocketOne, msg2.c_str(),(int)msg2.length(),0) == SOCKET_ERROR){
+            printf("Client 1 send error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+
+    } while (1);
 
     // connection closed (iResult == 0)
     iResult = shutdown(clientSocketOne, SD_SEND);
