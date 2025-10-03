@@ -80,6 +80,10 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
     char sendbuf[CLIENT_BUF_SIZE];
     // recieve data from server
     char recvbuf[DEFAULT_BUFLEN];
+
+    // TODO create loop that recieves data. That data that the server sends will have a delimiter. After
+    // the delimiter, there will be an indication as to whether the server expects a response or one if it will 
+    // send more data.
     do {
         printf("Input string to send to server: ");
         fgets(sendbuf, sizeof(sendbuf), stdin);

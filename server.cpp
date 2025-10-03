@@ -1,6 +1,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdio.h>
+#include <cstring>
 #pragma comment(lib, "ws2_32.lib") 
 
 #define DEFAULT_PORT "27015"
@@ -135,11 +136,40 @@ int main(){
     }
 
     // Accepting a connection
-    SOCKET clientSocket = INVALID_SOCKET;
-    clientSocket = accept(listenSocket, NULL, NULL);
-    if (clientSocket == INVALID_SOCKET){
-        printf("accept() error: %d\n", WSAGetLastError());
+    SOCKET clientSocketOne = INVALID_SOCKET;
+    clientSocketOne = accept(listenSocket, NULL, NULL);
+    if (clientSocketOne == INVALID_SOCKET){
+        printf("accept() first client error: %d\n", WSAGetLastError());
         closesocket(listenSocket);
+        WSACleanup();
+        return 1;
+    }
+    printf("Client one connected, waiting for client two.\n");
+
+    const char* msg1 = "Welcome to chess online, Player 1! Server is\
+     waiting for player 2 to connect.";
+    if (send(clientSocketOne, msg1, (int)strlen(msg1), 0) == SOCKET_ERROR){
+        printf("Welcome message to client one error: %d", WSAGetLastError());
+        closesocket(clientSocketOne);
+        WSACleanup();
+        return 1;
+    }
+
+    // Accepting another connection
+    SOCKET clientSocketTwo = INVALID_SOCKET;
+    clientSocketTwo = accept(listenSocket, NULL, NULL);
+    if (clientSocketTwo == INVALID_SOCKET){
+        printf("accept() second client error: %d\n", WSAGetLastError());
+        closesocket(listenSocket);
+        WSACleanup();
+        return 1;
+    }
+    printf("Client two connected.");
+
+    const char* msg2 = "Welcome to chess online, Player 2! Player one will start as White.";
+    if (send(clientSocketTwo, msg2, (int)strlen(msg2), 0) == SOCKET_ERROR){
+        printf("Welcome message to client two error: %d", WSAGetLastError());
+        closesocket(clientSocketTwo);
         WSACleanup();
         return 1;
     }
@@ -152,19 +182,20 @@ int main(){
     // recvbuf[DEFAULT_BUFLEN] = '\0'; // end with null for printing purposes. when calling recv function, effective buffer size is DEFAULT_BUFLEN
     int iSendResult;
 
+
     // Receive until the peer shuts down the connection (iResult == 0)
     do {
-        printf("Waiting to receive data from client.\n");
-        iResult = recv(clientSocket, recvbuf, DEFAULT_BUFLEN, 0);
+        printf("Waiting to receive data from client one.\n");
+        iResult = recv(clientSocketOne, recvbuf, DEFAULT_BUFLEN, 0);
         if (iResult > 0) {
             printf("Bytes received: %d\n", iResult);
             printf("string received: %s\n", recvbuf);
 
             // Echo the buffer back to the sender
-            iSendResult = send(clientSocket, recvbuf, iResult, 0);
+            iSendResult = send(clientSocketOne, recvbuf, iResult, 0);
             if (iSendResult == SOCKET_ERROR) {
                 printf("send() error: %d\n", WSAGetLastError());
-                closesocket(clientSocket);
+                closesocket(clientSocketOne);
                 WSACleanup();
                 return 1;
             }
@@ -173,7 +204,7 @@ int main(){
             printf("Connection closing...\n");
         else {
             printf("recv() error: %d\n", WSAGetLastError());
-            closesocket(clientSocket);
+            closesocket(clientSocketOne);
             WSACleanup();
             return 1;
         }
@@ -181,14 +212,20 @@ int main(){
     } while (iResult > 0);
 
     // connection closed (iResult == 0)
-    iResult = shutdown(clientSocket, SD_SEND);
+    iResult = shutdown(clientSocketOne, SD_SEND);
     if (iResult == SOCKET_ERROR){
-        printf("shutdown() error: %d\n", WSAGetLastError());
-        closesocket(clientSocket);
-        WSACleanup();
+        printf("shutdown() client one error: %d\n", WSAGetLastError());
+        // closesocket(clientSocketOne);
+        // closesocket(clientSocketTwo);
+        // WSACleanup();
+    }
+    iResult = shutdown(clientSocketTwo, SD_SEND);
+    if (iResult == SOCKET_ERROR){
+        printf("shutdown() client two error: %d\n", WSAGetLastError());
     }
 
-    closesocket(clientSocket);
+    closesocket(clientSocketOne);
+    closesocket(clientSocketTwo);
     WSACleanup();
 
     return 0;
