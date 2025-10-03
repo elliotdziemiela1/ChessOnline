@@ -100,7 +100,7 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
                 printf("Error with receiving data from server: %d\n", WSAGetLastError());
             }
         } else if (next_step == 'S'){
-            printf("Your turn.\n");
+            printf("Your turn:\n");
             fgets(sendbuf, DEFAULT_BUFLEN, stdin);
             iResult = send(connectSocket, sendbuf, DEFAULT_BUFLEN, 0);
             if (iResult == SOCKET_ERROR){

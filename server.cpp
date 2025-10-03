@@ -2,6 +2,7 @@
 #include <ws2tcpip.h>
 #include <stdio.h>
 #include <cstring>
+#include <string>
 #pragma comment(lib, "ws2_32.lib") 
 
 #include "utils.h"
@@ -188,37 +189,32 @@ int main(){
     // recvbuf[DEFAULT_BUFLEN] = '\0'; // end with null for printing purposes. when calling recv function, effective buffer size is DEFAULT_BUFLEN
     int iSendResult;
 
-    sendbuf = "Player two has connected. The game will begin momentarily.$R";
+    sendbuf = "Player two has connected. It's your turn to make the first move as White.\
+$S";
     if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
         printf("Second welcome message to client one error: %d", WSAGetLastError());
         cleanup(clientSocketOne, clientSocketTwo);
         return 1;
     }
 
-
-    // Receive until the peer shuts down the connection (iResult == 0)
+    // TODO edit this
     do {
-        printf("Waiting to receive data from client one.\n");
-        iResult = recv(clientSocketOne, recvbuf, DEFAULT_BUFLEN, 0);
-        if (iResult > 0) {
-            printf("Bytes received: %d\n", iResult);
-            printf("string received: %s\n", recvbuf);
-
-            // Echo the buffer back to the sender
-            iSendResult = send(clientSocketOne, recvbuf, iResult, 0);
-            if (iSendResult == SOCKET_ERROR) {
-                printf("send() error: %d\n", WSAGetLastError());
-                cleanup(clientSocketOne, clientSocketTwo);
-                return 1;
-            }
-            printf("Bytes sent: %d\n", iSendResult);
-        } else if (iResult == 0)
-            printf("Connection closing...\n");
-        else {
-            printf("recv() error: %d\n", WSAGetLastError());
-            cleanup(clientSocketOne, clientSocketTwo);  
+        printf("Waiting for client 1 to make first move.\n");
+        if (recv(clientSocketOne,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
+            printf("Client 1 receive error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
             return 1;
         }
+        printf("client 1's move: %s", recvbuf);
+        std::string c1move(recvbuf);
+        std::string msg("White just moved: ");
+        msg = msg+c1move+". Your turn now: $S";
+        if (send(clientSocketTwo, msg.c_str(),(int)msg.length(),0) == SOCKET_ERROR){
+            printf("Client 2 send error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+        }
+        
+
 
     } while (iResult > 0);
 
