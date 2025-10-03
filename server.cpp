@@ -4,8 +4,7 @@
 #include <cstring>
 #pragma comment(lib, "ws2_32.lib") 
 
-#define DEFAULT_PORT "27015"
-#define DEFAULT_BUFLEN 64
+#include "utils.h"
 
 // chess board is 8x8 tiles. White is always on bottom, and black is always on top.
 // server will keep track of entire board with a 2d vector of strings. Each of these strings will have a character
@@ -74,7 +73,15 @@
 //          Then add opponent piece to dead list for that color. If client is moving a rook, set the moved flag for that rook.
 //  
 
-
+// This simply closes the sockets passed as arguments and calls WSACleanup.
+void cleanup(SOCKET s1, SOCKET s2) {
+    closesocket(s1);
+    if (s2 != INVALID_SOCKET){
+        closesocket(s2);
+    }
+    WSACleanup();
+    return;
+}
 
 int main(){
     // WSA startup
@@ -130,8 +137,7 @@ int main(){
     // listening on socket
     if (listen(listenSocket, SOMAXCONN) == SOCKET_ERROR){
         printf("listen() error: %d\n", WSAGetLastError());
-        closesocket(listenSocket);
-        WSACleanup();
+        cleanup(listenSocket, INVALID_SOCKET);
         return 1;
     }
 
@@ -140,18 +146,19 @@ int main(){
     clientSocketOne = accept(listenSocket, NULL, NULL);
     if (clientSocketOne == INVALID_SOCKET){
         printf("accept() first client error: %d\n", WSAGetLastError());
-        closesocket(listenSocket);
-        WSACleanup();
+        cleanup(listenSocket, INVALID_SOCKET);
         return 1;
     }
     printf("Client one connected, waiting for client two.\n");
 
-    const char* msg1 = "Welcome to chess online, Player 1! Server is\
-     waiting for player 2 to connect.";
-    if (send(clientSocketOne, msg1, (int)strlen(msg1), 0) == SOCKET_ERROR){
+    const char *sendbuf;
+
+    // $ is the delimiter for the end of the message. $R tells client to wait to receive another message.
+    // $S tells client to send a message.
+    sendbuf = "Welcome to Chess Online, Player 1! Server is waiting for player 2 to connect.$R";
+    if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
         printf("Welcome message to client one error: %d", WSAGetLastError());
-        closesocket(clientSocketOne);
-        WSACleanup();
+        cleanup(clientSocketOne, listenSocket);
         return 1;
     }
 
@@ -160,27 +167,33 @@ int main(){
     clientSocketTwo = accept(listenSocket, NULL, NULL);
     if (clientSocketTwo == INVALID_SOCKET){
         printf("accept() second client error: %d\n", WSAGetLastError());
-        closesocket(listenSocket);
-        WSACleanup();
+        cleanup(listenSocket, INVALID_SOCKET);
         return 1;
     }
     printf("Client two connected.");
 
-    const char* msg2 = "Welcome to chess online, Player 2! Player one will start as White.";
-    if (send(clientSocketTwo, msg2, (int)strlen(msg2), 0) == SOCKET_ERROR){
+    // Don't need server socket once two connections are accepted
+    closesocket(listenSocket); 
+
+    sendbuf = "Welcome to Chess Online, Player 2! Player 1 will start as White.$R";
+    if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
         printf("Welcome message to client two error: %d", WSAGetLastError());
-        closesocket(clientSocketTwo);
-        WSACleanup();
+        cleanup(clientSocketOne, clientSocketTwo);
         return 1;
     }
 
-    // Don't need server socket once connection is accepted
-    closesocket(listenSocket); // TODO remove this if having two players
 
     // receive and send data on socket
     char recvbuf[DEFAULT_BUFLEN];
     // recvbuf[DEFAULT_BUFLEN] = '\0'; // end with null for printing purposes. when calling recv function, effective buffer size is DEFAULT_BUFLEN
     int iSendResult;
+
+    sendbuf = "Player two has connected. The game will begin momentarily.$R";
+    if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+        printf("Second welcome message to client one error: %d", WSAGetLastError());
+        cleanup(clientSocketOne, clientSocketTwo);
+        return 1;
+    }
 
 
     // Receive until the peer shuts down the connection (iResult == 0)
@@ -195,8 +208,7 @@ int main(){
             iSendResult = send(clientSocketOne, recvbuf, iResult, 0);
             if (iSendResult == SOCKET_ERROR) {
                 printf("send() error: %d\n", WSAGetLastError());
-                closesocket(clientSocketOne);
-                WSACleanup();
+                cleanup(clientSocketOne, clientSocketTwo);
                 return 1;
             }
             printf("Bytes sent: %d\n", iSendResult);
@@ -204,8 +216,7 @@ int main(){
             printf("Connection closing...\n");
         else {
             printf("recv() error: %d\n", WSAGetLastError());
-            closesocket(clientSocketOne);
-            WSACleanup();
+            cleanup(clientSocketOne, clientSocketTwo);  
             return 1;
         }
 
@@ -224,9 +235,7 @@ int main(){
         printf("shutdown() client two error: %d\n", WSAGetLastError());
     }
 
-    closesocket(clientSocketOne);
-    closesocket(clientSocketTwo);
-    WSACleanup();
+    cleanup(clientSocketOne, clientSocketTwo);
 
     return 0;
 }

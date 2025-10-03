@@ -1,11 +1,10 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdio.h>
+#include <string>
 #pragma comment(lib, "ws2_32.lib") 
 
-#define DEFAULT_PORT "27015"
-#define DEFAULT_BUFLEN 64
-#define CLIENT_BUF_SIZE 64
+#include "utils.h"
 
 // Chess board is 8x8 tiles
 
@@ -77,34 +76,38 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
         // }
         
     // read input string from stdin
-    char sendbuf[CLIENT_BUF_SIZE];
+    char sendbuf[DEFAULT_BUFLEN];
+
     // recieve data from server
     char recvbuf[DEFAULT_BUFLEN];
 
-    // TODO create loop that recieves data. That data that the server sends will have a delimiter. After
+    // TODO create loop that recieves data. That data that the server sends will have a delimiter (null char). After
     // the delimiter, there will be an indication as to whether the server expects a response or one if it will 
     // send more data.
+    char next_step = 'R';
     do {
-        printf("Input string to send to server: ");
-        fgets(sendbuf, sizeof(sendbuf), stdin);
-        
-        // send data to server
-        iResult = send(connectSocket, sendbuf, (int)sizeof(sendbuf), 0);
-        if (iResult == SOCKET_ERROR){
-            printf("send() error: %d\n", WSAGetLastError());
-            closesocket(connectSocket);
-            WSACleanup();
-            return -1;
-        }
-
-        iResult = recv(connectSocket, recvbuf, DEFAULT_BUFLEN, 0);
-        if (iResult > 0){
-            printf("bytes received: %d\n", iResult);
-            printf("string received: %s\n", recvbuf);
-        } else if (iResult == 0) {
-            printf("connection to server has closed");
-        } else {
-            printf("recv error: %d\n", WSAGetLastError());
+        if (next_step == 'R'){
+            iResult = recv(connectSocket, recvbuf, DEFAULT_BUFLEN, 0);
+            if (iResult > 0){
+                std::string s(recvbuf);
+                int idx = s.find('$'); // get index of delimiter
+                std::string subs = s.substr(0,idx);
+                printf("%s\n", subs.c_str()); // print up until delimiter
+                next_step = s.at(idx+1); // Get either an 'S' for send or an 'R' for receive after the delimiter.
+            } else if (iResult == 0){
+                printf("Connection to server closed.\n");
+            } else {
+                printf("Error with receiving data from server: %d\n", WSAGetLastError());
+            }
+        } else if (next_step == 'S'){
+            printf("Your turn.\n");
+            fgets(sendbuf, DEFAULT_BUFLEN, stdin);
+            iResult = send(connectSocket, sendbuf, DEFAULT_BUFLEN, 0);
+            if (iResult == SOCKET_ERROR){
+                printf("send() error: %d\n", WSAGetLastError());
+                break;
+            }
+            next_step = 'R';
         }
     } while (iResult > 0);
 
