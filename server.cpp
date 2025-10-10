@@ -197,7 +197,7 @@ $S";
         return 1;
     }
 
-    // TODO edit this
+    bool checkmate = false;
     do {
         //////////////////////
         /// Client 1 move ////
@@ -220,7 +220,7 @@ $S";
         // Telling client 2 of the move client 1 just made, and telling it to send a message
         std::string c1move(recvbuf);
         std::string msg("White just moved: ");
-        msg = msg+c1move+". Your turn now: $S";
+        msg = msg+c1move+"Your turn now: $S";
         if (send(clientSocketTwo, msg.c_str(),(int)msg.length(),0) == SOCKET_ERROR){
             printf("Client 2 send error: %d\n", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);
@@ -248,14 +248,14 @@ $S";
         // Telling client 1 of the move client 2 just made, and telling it to send a message
         std::string c2move(recvbuf);
         std::string msg2("Black just moved: ");
-        msg2 = msg2+c2move+". Your turn now: $S";
+        msg2 = msg2+c2move+"Your turn now: $S";
         if (send(clientSocketOne, msg2.c_str(),(int)msg2.length(),0) == SOCKET_ERROR){
             printf("Client 1 send error: %d\n", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);
             return 1;
         }
 
-    } while (1);
+    } while (!checkmate);
 
     // connection closed (iResult == 0)
     iResult = shutdown(clientSocketOne, SD_SEND);
