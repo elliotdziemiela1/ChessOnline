@@ -9,6 +9,7 @@
                 "-g",
                 "${file}",
                 "utils.cpp",
+                "game.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "-lws2_32"

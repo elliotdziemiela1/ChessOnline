@@ -64,16 +64,6 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
         return 1;
     }
 
-    
-    // shutdown sending portion of socket
-    // TODO This is just for current testing
-    // iResult = shutdown(connectSocket, SD_SEND);
-    // if (iResult == SOCKET_ERROR) {
-        //     printf("shutdown sending error: %d\n", WSAGetLastError());
-        //     closesocket(connectSocket);
-        //     WSACleanup();
-        //     return 1;
-        // }
         
     // read input string from stdin
     char sendbuf[DEFAULT_BUFLEN];
@@ -81,9 +71,9 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
     // recieve data from server
     char recvbuf[DEFAULT_BUFLEN];
 
-    // TODO create loop that recieves data. That data that the server sends will have a delimiter (null char). After
-    // the delimiter, there will be an indication as to whether the server expects a response or one if it will 
-    // send more data.
+    // loop that recieves data. That data that the server sends will have a delimiter (null char). After
+    // the delimiter, there will be an indication as to whether the client should expect to recieve more data ('R')
+    // or if the client should send data ('S')
     char next_step = 'R';
     do {
         if (next_step == 'R'){
