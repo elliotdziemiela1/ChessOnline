@@ -1,5 +1,8 @@
 #include <vector>
+#include <string>
 #include "utils.h"
+
+#define PRINTED_BOARD_SIZE 11*12
 
 // chess board is 8x8 tiles. White is always on bottom, and black is always on top.
 // server will keep track of entire board with a 2d vector of strings. Each of these strings will have a character
@@ -74,10 +77,13 @@ class Game {
         Game();
         bool get_white_in_checkmate();
         bool get_black_in_checkmate();
-        bool is_move_valid(char buf[DEFAULT_BUFLEN]);
+        bool is_move_valid(char buf[DEFAULT_BUFLEN], enum Color c);
+        void format_table_to_print(char buf[DEFAULT_BUFLEN]);
     private:
         bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king moved flags
         bool BR1_moved, BR2_moved, BK_moved; // black rooks and black king moved flags
 
         bool white_in_checkmate, black_in_checkmate;
+
+        std::vector<std::vector<std::string>> table;
 };

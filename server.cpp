@@ -123,29 +123,39 @@ Example: c1e3 would attempt to move the piece at c1 to position e3.$R";
         return 1;
     }
 
+    Game game; // Instatiate the game
+
 
     // receive and send data on socket
     char recvbuf[DEFAULT_BUFLEN];
     // recvbuf[DEFAULT_BUFLEN] = '\0'; // end with null for printing purposes. when calling recv function, effective buffer size is DEFAULT_BUFLEN
     int iSendResult;
 
-    sendbuf = "Player two has connected. It's your turn to make the first move as White.\
-$S";
-    if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+    char tablebuf[DEFAULT_BUFLEN];
+    game.format_table_to_print(tablebuf);
+    tablebuf[PRINTED_BOARD_SIZE] = '$';
+    tablebuf[PRINTED_BOARD_SIZE+1] = 'R';
+    tablebuf[PRINTED_BOARD_SIZE+2] = '\0';
+
+
+    if (send(clientSocketOne, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
         printf("Second welcome message to client one error: %d", WSAGetLastError());
         cleanup(clientSocketOne, clientSocketTwo);
         return 1;
     }
 
-
-
-
-    Game game; // Instatiate the game
+    sendbuf = "Player two has connected. It's your turn to make the first move as White.\
+$S";
+    if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+        printf("Third welcome message to client one error: %d", WSAGetLastError());
+        cleanup(clientSocketOne, clientSocketTwo);
+        return 1;
+    }
 
     do {
-        //////////////////////
-        /// Client 1 move ////
-        //////////////////////
+        ///////////////////////////////
+        /// Client 1 (White) move ////
+        /////////////////////////////
         printf("Waiting for client 1 to make move.\n");
         if (recv(clientSocketOne,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
             printf("Client 1 receive error: %d\n", WSAGetLastError());
@@ -154,7 +164,7 @@ $S";
         }
         printf("client 1's move: %s", recvbuf);
 
-        while(!game.is_move_valid(recvbuf)){
+        while(!game.is_move_valid(recvbuf, Color::White)){
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 1 send error: %d\n", WSAGetLastError());
@@ -169,6 +179,8 @@ $S";
             }
             printf("client 1's move: %s", recvbuf);
         } 
+
+        // TODO Now that the move has been validated, make the move.
 
         // Now sending confirmation to client 1 and telling them to wait for another message.
         sendbuf = "Nice move. Now waiting for Black's move.$R";
@@ -188,9 +200,9 @@ $S";
             return 1;
         }
 
-        //////////////////////
-        /// Client 2 move ////
-        //////////////////////
+        //////////////////////////////
+        /// Client 2 (Black) move ////
+        //////////////////////////////
         printf("Waiting for client 2 to make move.\n");
         if (recv(clientSocketTwo,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
             printf("Client 2 receive error: %d\n", WSAGetLastError());
@@ -199,7 +211,7 @@ $S";
         }
         printf("client 2's move: %s", recvbuf);
 
-        while(!game.is_move_valid(recvbuf)){
+        while(!game.is_move_valid(recvbuf, Color::Black)){
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 2 send error: %d\n", WSAGetLastError());
@@ -214,6 +226,8 @@ $S";
             }
             printf("client 2's move: %s", recvbuf);
         } 
+
+        // TODO Now that the move has been validated, make the move.
 
         // Now sending confirmation to client 2 and telling them to wait for another message.
         sendbuf = "Nice move. Now waiting for White's move.$R";

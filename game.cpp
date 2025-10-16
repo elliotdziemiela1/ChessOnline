@@ -1,4 +1,9 @@
+#include <utility>
+#include <vector>
+#include <string>
+#include <cstring>
 #include "game.h"
+#include "utils.h"
 
 // chess board is 8x8 tiles. White is always on bottom, and black is always on top.
 // server will keep track of entire board with a 2d vector of strings. Each of these strings will have a character
@@ -71,8 +76,53 @@
 
 Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(false), BR2_moved(false), BK_moved(false),
 white_in_checkmate(false), black_in_checkmate(false){
-
+    // All moves on the board will be in the format (row, col)
+    table = {
+            {"BR2", "BN", "BB", "BQ", "BK", "BB", "BN", "BR1"},
+            {"BP" , "BP", "BP", "BP", "BP", "BP", "BP", "BP" },
+            {"__" , "__", "__", "__", "__", "__", "__", "__" },
+            {"__" , "__", "__", "__", "__", "__", "__", "__" },
+            {"__" , "__", "__", "__", "__", "__", "__", "__" },
+            {"__" , "__", "__", "__", "__", "__", "__", "__" },
+            {"WP" , "WP", "WP", "WP", "WP", "WP", "WP", "WP" },
+            {"WR1", "WN", "WB", "WQ", "WK", "WB", "WN", "WR2"}
+        };
 };
+
+void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
+    std::vector<std::vector<std::string>> pretty_table = table;
+    pretty_table.insert(pretty_table.begin(),{"__","__","__","__","__","__","__","__"});
+    pretty_table.push_back({"__","__","__","__","__","__","__","__"});
+    pretty_table.push_back({"a ","b ","c ","d ","e ","f ","g ","h "});
+
+
+    std::string numbers = "12345678";
+
+    memset(buf, '_', DEFAULT_BUFLEN);
+
+    for (int i = 0; i < 11; i++){ // 8 rows for the pieces, 2 rows for the board edge, one row for the letters
+        for (int j = 0; j < 12; j++){ // 8 cols for the pieces, 2 cols for the board edge, 1 for the numbers, and 1 for newline chars
+            if ((i > 0 && i < 9) && j == 0){ // print numbers on the left side
+                buf[(i*12+j)*2] = ' ';
+                buf[(i*12+j)*2+1] = numbers.at(i-1);
+            } else if (j == 11){ // print newline chars on right edge
+                buf[(i*12+j)*2] = ' ';
+                buf[(i*12+j)*2+1] = '\n';
+            } else if (j == 1 && i < 10){ // print left edge of board
+                buf[(i*12+j)*2] = ' ';
+                buf[(i*12+j)*2+1] = '|';
+            } else if (j == 10 && i < 10){ // print right edge of board
+                buf[(i*12+j)*2] = '|';
+                buf[(i*12+j)*2+1] = ' ';
+            } else if (j >= 2 && j < 10){
+                buf[(i*12+j)*2] = pretty_table[i][j-2].at(0);
+                buf[(i*12+j)*2+1] = pretty_table[i][j-2].at(1);
+            }
+            
+        }
+    }
+    
+}
 
 
 bool Game::get_white_in_checkmate(){
@@ -83,6 +133,28 @@ bool Game::get_black_in_checkmate(){
     return this->black_in_checkmate;
 }
 
-bool Game::is_move_valid(char buf[DEFAULT_BUFLEN]){
+bool Game::is_move_valid(char buf[DEFAULT_BUFLEN], enum Color c){
+    //////////////////////////////////////
+    //// Checking input /////
+    //////////////////////////////////////
+    if (buf[0] < 'a' || buf[0] > 'h') return false;
+    if (buf[1] < '1' || buf[1] > '8') return false;
+    if (buf[2] < 'a' || buf[2] > 'h') return false;
+    if (buf[3] < '1' || buf[3] > '8') return false;
+    if (buf[4] != '\n' && buf[5] != '\0') return false;
+
+    //////////////////////////////////////
+    //// Reformatting /////
+    //////////////////////////////////////
+    // Turn starting and ending coordiantes into integer coordinates i.e. (a,5) -> (1,5)
+    std::pair<int,int> starting_coord((int)buf[0] - (int)('a') + 1, (int)buf[1] - (int)('1') + 1);
+    std::pair<int,int> end_coord((int)buf[2] - (int)('a') + 1, (int)buf[3] - (int)('1') + 1);
+
+    //////////////////////////////////////
+    //// Checking Color /////
+    //////////////////////////////////////
+
+
+
     return true;
 };
