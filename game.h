@@ -2,7 +2,11 @@
 #include <string>
 #include "utils.h"
 
-#define PRINTED_BOARD_SIZE 11*12
+
+#define PRINTED_BOARD_ROWS 18
+#define PRINTED_BOARD_COLS 44
+#define PRINTED_BOARD_SIZE PRINTED_BOARD_ROWS * PRINTED_BOARD_COLS
+
 
 // chess board is 8x8 tiles. White is always on bottom, and black is always on top.
 // server will keep track of entire board with a 2d vector of strings. Each of these strings will have a character
