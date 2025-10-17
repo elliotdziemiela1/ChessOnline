@@ -128,7 +128,7 @@ bool Game::get_black_in_checkmate(){
     return this->black_in_checkmate;
 }
 
-bool Game::is_move_valid(char buf[DEFAULT_BUFLEN], enum Color c){
+bool Game::is_move_valid(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     //// Checking input /////
     //////////////////////////////////////
@@ -142,12 +142,18 @@ bool Game::is_move_valid(char buf[DEFAULT_BUFLEN], enum Color c){
     //// Reformatting /////
     //////////////////////////////////////
     // Turn starting and ending coordiantes into integer coordinates that are swapped for (row,col) table indexing i.e. (a,5) -> (5,1)
-    std::pair<int,int> starting_coord((int)buf[1] - (int)('1') + 1, (int)buf[0] - (int)('a') + 1);
+    std::pair<int,int> start_coord((int)buf[1] - (int)('1') + 1, (int)buf[0] - (int)('a') + 1);
     std::pair<int,int> end_coord((int)buf[3] - (int)('1') + 1, (int)buf[2] - (int)('a') + 1);
 
     //////////////////////////////////////
     //// Checking Color /////
     //////////////////////////////////////
+    char start_coord_color = table[start_coord.first][start_coord.second].at(0);
+    if (player_color != start_coord_color)
+        return false;
+
+    // saving piece type
+    char start_piece_type = table[start_coord.first][start_coord.second].at(1);
 
 
 

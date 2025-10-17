@@ -30,23 +30,24 @@
 //      (i.e. "a2", "d5") which get sent to the server. Then, steps 1-6 following this will fall under a single function called "is_move_valid".
 //      If that function returns false, the client is prompted to try again. If it returns true, steps 7 and 8 are executed
 //      
-//  2) These coordinates are then converted to integer coordiantes (i.e. "a2" -> 12, "d5" -> 45).Then the server will convert these integers into pair<int,int>. 
+//  2) These coordinates are then converted to integer coordiantes (i.e. "a2" -> 12, "d5" -> 45).Then the server will convert these integers 
+//      into pair<int,int> where the row and column from the user input are swapped as (col,row)->(row,col) to match the layout of the 2d board vector. 
 //  3) If there is a piece at the starting position that is of the current player's color, the type of the piece at the starting coordiante will be 
 //      saved as a local variable serverside, and so will the
 //      starting position and the color of the piece. Otherwise, the move won't be accepted.
-//  4) The difference vector (as a pair<int,int>) will be calculated (i.e. for a bishop moving up and right, 4-1,5-2 = (3,3)),
-//      or (i.e. for a queen moving left, 1-6,2-2 = (-5,0)).
+//  4) The difference vector (as a pair<int,int>) will be calculated (i.e. for a bishop moving from (1,3) to (3,5), vector is (3-1,5-3) = (2,2)),
+//      or (i.e. for a queen moving left from (3,8) to (3,2), vector is (3-3,2-8) = (0,-6)).
 //  5) The piece type will be used to index into a hash table (map) where the keys are piece types and 
 //      the values are vector<pair<int,int>> containing every possible movement vector for that piece. If no match is found
 //      in that vector for the movement difference vector we just calculated, the server sends "move invalid" and waits for 
 //      that client to submit a new move (go back to step 1).
 //  6) If a match is found, the next steps depend on the piece type.
 //      6a) if the piece is a pawn
-//          6ai) if the movment is forward by one ((0,1) or (0,-1)) and there's a piece in the way, don't allow the move.
-//          6aii) if the movement is forward by two ((0,2) or (0,-2)) and there's a piece in the way, don't allow the move.
-//                  Or if the pawn isn't in row 2 with vector (0,2), dont allow the move. Or if the pawn isn't
-//                  in row 6 with vector (0,-2), don't allow the move.
-//          6aiii) If the pawn is white if the movement is diagonal by one ((1,1), (-1,1)) and there isn't a piece to capture,
+//          6ai) if the movment is forward by one ((1,0) or (-1,0)) and there's a piece in the way, don't allow the move.
+//          6aii) if the movement is forward by two ((2,0) or (-2,0)) and there's a piece in the way, don't allow the move.
+//                  Or if the pawn isn't in row 2 with vector (2,0), dont allow the move. Or if the pawn isn't
+//                  in row 6 with vector (-2,0), don't allow the move.
+//          6aiii) If the pawn is white if the movement is diagonal by one ((1,1), (1,-1)) and there isn't a piece to capture,
 //                  don't allow the move. Same for if the pawn is black and the movement is down diagonal by one and there isn't
 //                  a piece to capture, don't allow the move.
 //          6aiv) Move to step 7
@@ -81,7 +82,7 @@ class Game {
         Game();
         bool get_white_in_checkmate();
         bool get_black_in_checkmate();
-        bool is_move_valid(char buf[DEFAULT_BUFLEN], enum Color c);
+        bool is_move_valid(char buf[DEFAULT_BUFLEN], char player_color);
         void format_table_to_print(char buf[DEFAULT_BUFLEN]);
     private:
         bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king moved flags

@@ -164,7 +164,7 @@ $S";
         }
         printf("client 1's move: %s", recvbuf);
 
-        while(!game.is_move_valid(recvbuf, Color::White)){
+        while(!game.is_move_valid(recvbuf, 'W')){
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 1 send error: %d\n", WSAGetLastError());
@@ -211,7 +211,7 @@ $S";
         }
         printf("client 2's move: %s", recvbuf);
 
-        while(!game.is_move_valid(recvbuf, Color::Black)){
+        while(!game.is_move_valid(recvbuf, 'B')){
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 2 send error: %d\n", WSAGetLastError());
