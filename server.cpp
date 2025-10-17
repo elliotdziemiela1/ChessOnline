@@ -131,15 +131,19 @@ Example: c1e3 would attempt to move the piece at c1 to position e3.$R";
     // recvbuf[DEFAULT_BUFLEN] = '\0'; // end with null for printing purposes. when calling recv function, effective buffer size is DEFAULT_BUFLEN
     int iSendResult;
 
+    // setting up buffer that holds the printed table. This table is of fixed size and will have it's contents replaced after every move.
     char tablebuf[DEFAULT_BUFLEN];
-    game.format_table_to_print(tablebuf);
     tablebuf[PRINTED_BOARD_SIZE] = '$';
     tablebuf[PRINTED_BOARD_SIZE+1] = 'R';
     tablebuf[PRINTED_BOARD_SIZE+2] = '\0';
 
+    // Sending table to client 1
+    game.format_table_to_print(tablebuf); // update the contents of the printed table buffer
+    tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 1 to recieve a message from server after recieving table
 
+    // Send the printed table
     if (send(clientSocketOne, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
-        printf("Second welcome message to client one error: %d", WSAGetLastError());
+        printf("Sending table to client 1 error: %d", WSAGetLastError());
         cleanup(clientSocketOne, clientSocketTwo);
         return 1;
     }
@@ -153,6 +157,7 @@ $S";
     }
 
     do {
+        
         ///////////////////////////////
         /// Client 1 (White) move ////
         /////////////////////////////
@@ -164,7 +169,7 @@ $S";
         }
         printf("client 1's move: %s", recvbuf);
 
-        while(!game.is_move_valid(recvbuf, 'W')){
+        while(!game.make_move(recvbuf, 'W')){ // if condition is false, move was invalid and server requests another
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 1 send error: %d\n", WSAGetLastError());
@@ -180,12 +185,27 @@ $S";
             printf("client 1's move: %s", recvbuf);
         } 
 
-        // TODO Now that the move has been validated, make the move.
+        // Send table again to show client 1 where they moved
+        game.format_table_to_print(tablebuf); // update the contents of the printed table buffer
+        tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 1 to wait for message from server after recieving table
+        if (send(clientSocketOne, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Sending table pt.2 to client 1 error: %d", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
 
         // Now sending confirmation to client 1 and telling them to wait for another message.
         sendbuf = "Nice move. Now waiting for Black's move.$R";
         if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
             printf("client 1 send error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+
+        // sending updated table to client 2
+        tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 2 to wait for message from server after recieving table
+        if (send(clientSocketTwo, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Sending table pt.1 to client 2 error: %d", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);
             return 1;
         }
@@ -211,7 +231,7 @@ $S";
         }
         printf("client 2's move: %s", recvbuf);
 
-        while(!game.is_move_valid(recvbuf, 'B')){
+        while(!game.make_move(recvbuf, 'B')){ // if condition is false, move was invalid and server requests another
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 2 send error: %d\n", WSAGetLastError());
@@ -227,7 +247,14 @@ $S";
             printf("client 2's move: %s", recvbuf);
         } 
 
-        // TODO Now that the move has been validated, make the move.
+        // Send table again to show client 2 where they moved
+        game.format_table_to_print(tablebuf); // update the contents of the printed table buffer
+        tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 2 to wait for message from server after recieving table
+        if (send(clientSocketTwo, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Sending table pt.2 to client 2 error: %d", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
 
         // Now sending confirmation to client 2 and telling them to wait for another message.
         sendbuf = "Nice move. Now waiting for White's move.$R";
@@ -237,7 +264,17 @@ $S";
             return 1;
         }
 
-        // Telling client 1 of the move client 2 just made, and telling it to send a message
+        // Sending updated table to client 1
+        game.format_table_to_print(tablebuf); // update the contents of the printed table buffer
+        tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 1 to send a move to server after recieving table
+        // Send the printed table
+        if (send(clientSocketOne, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Sending table pt.1 to client 1 error: %d", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+
+        // Telling client 1 of the move client 2 just made
         std::string c2move(recvbuf);
         std::string msg2("Black just moved: ");
         msg2 = msg2+c2move+"Your turn now: $S";

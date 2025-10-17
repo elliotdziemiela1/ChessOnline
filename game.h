@@ -8,6 +8,7 @@
 #define PRINTED_BOARD_SIZE PRINTED_BOARD_ROWS * PRINTED_BOARD_COLS
 
 
+
 // chess board is 8x8 tiles. White is always on bottom, and black is always on top.
 // server will keep track of entire board with a 2d vector of strings. Each of these strings will have a character
 // for the color, a character for the piece type, and a number character for the specific knight it is (needed for castle-ing),
@@ -24,12 +25,12 @@
 
 //////////////////////////////////////
 // A step by step rundown of a turn:
+// THIS IS A GENERAL OUTLINE MADE BEFORE CODING. IMPLEMENTATION MAY DIFFER SLIGHTLY, PARTICULARLY THE MOVEMENT COORDINATES/VECTORS
 //////////////////////////////////////
 
 //  1) When a client takes a turn, they will type the starting position coordinate and the ending position coordinate
-//      (i.e. "a2", "d5") which get sent to the server. Then, steps 1-6 following this will fall under a single function called "is_move_valid".
-//      If that function returns false, the client is prompted to try again. If it returns true, steps 7 and 8 are executed
-//      
+//      (i.e. "a2", "d5") which get sent to the server. Then the rest of the steps are in a function called "make_move" which will check that the
+//      requested move is valid. If it's valid, the move will be made and the function returns true. Otherwise it returns false.
 //  2) These coordinates are then converted to integer coordiantes (i.e. "a2" -> 12, "d5" -> 45).Then the server will convert these integers 
 //      into pair<int,int> where the row and column from the user input are swapped as (col,row)->(row,col) to match the layout of the 2d board vector. 
 //  3) If there is a piece at the starting position that is of the current player's color, the type of the piece at the starting coordiante will be 
@@ -82,7 +83,7 @@ class Game {
         Game();
         bool get_white_in_checkmate();
         bool get_black_in_checkmate();
-        bool is_move_valid(char buf[DEFAULT_BUFLEN], char player_color);
+        bool make_move(char buf[DEFAULT_BUFLEN], char player_color);
         void format_table_to_print(char buf[DEFAULT_BUFLEN]);
     private:
         bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king moved flags

@@ -128,7 +128,7 @@ bool Game::get_black_in_checkmate(){
     return this->black_in_checkmate;
 }
 
-bool Game::is_move_valid(char buf[DEFAULT_BUFLEN], char player_color){
+bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     //// Checking input /////
     //////////////////////////////////////
@@ -142,20 +142,31 @@ bool Game::is_move_valid(char buf[DEFAULT_BUFLEN], char player_color){
     //// Reformatting /////
     //////////////////////////////////////
     // Turn starting and ending coordiantes into integer coordinates that are swapped for (row,col) table indexing i.e. (a,5) -> (5,1)
-    std::pair<int,int> start_coord((int)buf[1] - (int)('1') + 1, (int)buf[0] - (int)('a') + 1);
-    std::pair<int,int> end_coord((int)buf[3] - (int)('1') + 1, (int)buf[2] - (int)('a') + 1);
+    std::pair<int,int> start_coord(7 - ((int)buf[1] - (int)('1')),((int)buf[0] - (int)('a')));
+    std::pair<int,int> end_coord(7 - ((int)buf[3] - (int)('1')),((int)buf[2] - (int)('a')));
+
 
     //////////////////////////////////////
-    //// Checking Color /////
+    //// Getting piece from table /////
     //////////////////////////////////////
-    char start_coord_color = table[start_coord.first][start_coord.second].at(0);
+    std::string piece = table[start_coord.first][start_coord.second];
+
+    // saving color and type
+    char start_coord_color = piece.at(0);
     if (player_color != start_coord_color)
         return false;
 
     // saving piece type
-    char start_piece_type = table[start_coord.first][start_coord.second].at(1);
+    char start_piece_type = piece.at(1);
 
 
+
+
+    //////////////////////////////////////
+    //// Making Move /////
+    //////////////////////////////////////
+    table[start_coord.first][start_coord.second] = "  ";
+    table[end_coord.first][end_coord.second] = piece;
 
     return true;
 };
