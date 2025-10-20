@@ -235,12 +235,25 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     if (piece.at(1) == 'N'){
         bool valid_flag = false;
         for (std::pair<int,int> p : knight_move_vectors){ // loop through all the possible knight movement vectors
-            if (p.first == move_vector.first && p.second == move_vector.second)
+            if (p == move_vector){
                 valid_flag = true;
                 break;
+            }
         }
         if (!valid_flag)
             return false;
+
+        // check if we're removing a piece
+        if (end_piece.at(0) == 'W')
+            white_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'B')
+            black_dead_list.push_back(end_piece);
+
+        // make move
+        table[start_coord.first][start_coord.second] = "  ";
+        table[end_coord.first][end_coord.second] = piece;
+        
+        return true;
     } 
 
     //////////////////////////////////////
@@ -249,6 +262,8 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     if (piece.at(1) == 'B'){
         if (move_vector.first != move_vector.second) // for diagonal movement, row-movement and col-movement must be equal
             return false;
+
+        return true;
     } 
     
     //////////////////////////////////////
@@ -259,6 +274,8 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             if (move_vector.first != move_vector.second) // if not diagonal movement
                 return false;
         }
+
+        return true;
     } 
     
     //////////////////////////////////////
@@ -279,6 +296,8 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
 // that king is only moving 1 tile away
             return false;
         }
+
+        return true;
     } 
     
     //////////////////////////////////////
@@ -290,6 +309,8 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             if (!(piece.at(0) == 'W' && start_coord.first == 2))
                 return false;
         }
+
+        return true;
     }
 
 
@@ -297,6 +318,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     //// Making Move /////
     //////////////////////////////////////
+    // TODO remove this in finished product
     table[start_coord.first][start_coord.second] = "  ";
     table[end_coord.first][end_coord.second] = piece;
 
