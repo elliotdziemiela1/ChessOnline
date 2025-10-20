@@ -94,7 +94,7 @@ int main(){
     // $S tells client to send a message.
     sendbuf = "Welcome to Chess Online, Player 1! Server is waiting for player 2 to connect.\n\
 Controls: input the tile of the piece you would like to move first, followed directly by the destination tile. \
-Example: c1e3 would attempt to move the piece at c1 to position e3.$R";
+Example: c1e3 would attempt to move the piece at c1 to position e3. If you want to castle, move the king, not the rook.$R";
     if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
         printf("Welcome message to client one error: %d", WSAGetLastError());
         cleanup(clientSocketOne, listenSocket);
@@ -116,7 +116,7 @@ Example: c1e3 would attempt to move the piece at c1 to position e3.$R";
 
     sendbuf = "Welcome to Chess Online, Player 2! Player 1 will start as White.\n\
 Controls: input the tile of the piece you would like to move first, followed directly by the destination tile. \
-Example: c1e3 would attempt to move the piece at c1 to position e3.$R";
+Example: c1e3 would attempt to move the piece at c1 to position e3. If you want to castle, move the king, not the rook.$R";
     if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
         printf("Welcome message to client two error: %d", WSAGetLastError());
         cleanup(clientSocketOne, clientSocketTwo);

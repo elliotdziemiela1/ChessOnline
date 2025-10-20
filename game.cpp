@@ -91,6 +91,9 @@ Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(fa
     knight_move_vectors = {
         {2,1},{1,2},{-1,2},{-2,1},{-2,-1},{-1,-2},{1,-2},{2,-1}
     };
+
+    white_dead_list = {};
+    black_dead_list = {};
 };
 
 bool Game::get_black_won(){
@@ -133,10 +136,10 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
 
 
 bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
-    char start_piece_type;
-    char start_piece_color;
     bool attempting_left_castle; // this will refer to castles on the left side of the board, i.e. BK and BR1, or WK and WR1
     bool attempting_right_castle; // this will refer to castles on the right side of the board, i.e. BK and BR2, or WK and WR2
+    std::string piece; // the piece being moved
+    std::string end_piece; // the piece (or blank space) at the end coordinate
 
     //////////////////////////////////////
     //// Checking input /////
@@ -156,30 +159,80 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
 
 
     //////////////////////////////////////
-    //// Getting piece from table /////
+    //// Getting pieces from table /////
     //////////////////////////////////////
-    std::string piece = table[start_coord.first][start_coord.second];
+    piece = table[start_coord.first][start_coord.second];
+    end_piece = table[end_coord.first][end_coord.second];
 
-    // saving color and type
-    start_piece_color = piece.at(0);
-    if (player_color != start_piece_color)
+    // sanity check: piece being moved is the same as the current player's piece
+    if (player_color != piece.at(0))
         return false;
 
-    // saving piece type
-    start_piece_type = piece.at(1);
 
     //////////////////////////////////////
-    //// Validating movement /////
+    //// Creating move vector /////
     //////////////////////////////////////
-    std::pair<int,int> move_vector = {end_coord.first-start_coord.first, end_coord.second-end_coord.second};
+    std::pair<int,int> move_vector = {end_coord.first-start_coord.first, end_coord.second-start_coord.second};
 
-    if (move_vector.first == 0 && move_vector.second == 0) // if not moving at all, return false
+    // sanity check: if not moving at all, return false
+    if (move_vector.first == 0 && move_vector.second == 0) 
         return false;
 
-    if (start_piece_type == 'R'){
+    // sanity check: if friendly piece at endcoord, return false
+    if (piece.at(0) == end_piece.at(0))
+        return false;
+    
+    //////////////////////////////////////
+    //// Handling rook movement /////
+    //////////////////////////////////////
+    if (piece.at(1) == 'R'){
         if (move_vector.first != 0 && move_vector.second != 0) // either row-movement or col-movement must be 0 for a rook
             return false;
-    } else if (start_piece_type == 'N'){
+
+        // vector is valid, now check for collisions in the path leading up to end_coord
+        std::pair<int,int> iterative_coord = start_coord;
+        do {
+            // increment the iterative coordinate based on direction of move_vector
+            if (move_vector.first > 0)
+                iterative_coord.first++;
+            else if (move_vector.first < 0)
+                iterative_coord.first--;
+            else if (move_vector.second > 0)
+                iterative_coord.second++;
+            else if (move_vector.second < 0)
+                iterative_coord.second--;
+            // if a piece is in the way
+            if (iterative_coord != end_coord && table[iterative_coord.first][iterative_coord.second] != "  ")
+                return false;
+        } while (iterative_coord != end_coord);
+
+        // check if we're removing a piece
+        if (end_piece.at(0) == 'W')
+            white_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'B')
+            black_dead_list.push_back(end_piece);
+
+        // make move
+        table[start_coord.first][start_coord.second] = "  ";
+        table[end_coord.first][end_coord.second] = piece;
+
+        // set rook moved flag
+        if (piece == "WR1")
+            WR1_moved = true;
+        else if (piece == "WR2")
+            WR2_moved = true;
+        else if (piece == "BR1")
+            BR1_moved = true;
+        else if (piece == "BR2")
+            BR2_moved = true;
+
+        return true;
+    } 
+
+    //////////////////////////////////////
+    //// Handling knight movement /////
+    //////////////////////////////////////
+    if (piece.at(1) == 'N'){
         bool valid_flag = false;
         for (std::pair<int,int> p : knight_move_vectors){ // loop through all the possible knight movement vectors
             if (p.first == move_vector.first && p.second == move_vector.second)
@@ -188,21 +241,36 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         }
         if (!valid_flag)
             return false;
-    } else if (start_piece_type == 'B'){
+    } 
+
+    //////////////////////////////////////
+    //// Handling bishop movement /////
+    //////////////////////////////////////
+    if (piece.at(1) == 'B'){
         if (move_vector.first != move_vector.second) // for diagonal movement, row-movement and col-movement must be equal
             return false;
-    } else if (start_piece_type == 'Q'){
+    } 
+    
+    //////////////////////////////////////
+    //// Handling queen movement /////
+    //////////////////////////////////////
+    if (piece.at(1) == 'Q'){
         if (move_vector.first != 0 && move_vector.second != 0){ // if not straight line movement
             if (move_vector.first != move_vector.second) // if not diagonal movement
                 return false;
         }
-    } else if (start_piece_type == 'K'){
-        if (start_piece_color=='W' && !WK_moved && move_vector.first==0){ // first we check for white castleing
+    } 
+    
+    //////////////////////////////////////
+    //// Handling king movement /////
+    //////////////////////////////////////
+    if (piece.at(1) == 'K'){
+        if (piece.at(0)=='W' && !WK_moved && move_vector.first==0){ // first we check for white castleing
             if (move_vector.second==-2 && !WR1_moved)
                 attempting_left_castle = true;
             if (move_vector.second==2 && !WR2_moved)
                 attempting_right_castle = true;
-        } else if (start_piece_color=='B' && !BK_moved && move_vector.first==0){ // then we check for black castleing
+        } else if (piece.at(0)=='B' && !BK_moved && move_vector.first==0){ // then we check for black castleing
             if (move_vector.second==-2 && !BR1_moved)
                 attempting_left_castle = true;
             if (move_vector.second==2 && !BR2_moved)
@@ -211,9 +279,15 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
 // that king is only moving 1 tile away
             return false;
         }
-    } else if (start_piece_type == 'P'){
+    } 
+    
+    //////////////////////////////////////
+    //// Handling pawn movement /////
+    //////////////////////////////////////
+    if (piece.at(1) == 'P'){
+        // REMEMBER MOVING TOWARDS BLACK SIDE IS NEGATIVE MOVMENT, AND TOWARDS WHITE SIDE IS POSITIVE MOVEMENT
         if (move_vector.first == 2){
-            if (!(start_piece_color == 'W' && start_coord.first == 2))
+            if (!(piece.at(0) == 'W' && start_coord.first == 2))
                 return false;
         }
     }
