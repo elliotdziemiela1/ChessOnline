@@ -2,6 +2,9 @@
 #include <vector>
 #include <string>
 #include <cstring>
+#include <map>
+#include <cmath>
+
 #include "game.h"
 #include "utils.h"
 
@@ -34,10 +37,7 @@
 //      starting position and the color of the piece. Otherwise, the move won't be accepted.
 //  4) The difference vector (as a pair<int,int>) will be calculated (i.e. for a bishop moving up and right, 4-1,5-2 = (3,3)),
 //      or (i.e. for a queen moving left, 1-6,2-2 = (-5,0)).
-//  5) The piece type will be used to index into a hash table (map) where the keys are piece types and 
-//      the values are vector<pair<int,int>> containing every possible movement vector for that piece. If no match is found
-//      in that vector for the movement difference vector we just calculated, the server sends "move invalid" and waits for 
-//      that client to submit a new move (go back to step 1).
+//  5) The movement difference vector is examined based on the piece type to determine validity. If the move is deemed invalid, don't allow it.
 //  6) If a match is found, the next steps depend on the piece type.
 //      6a) if the piece is a pawn
 //          6ai) if the movment is forward by one ((0,1) or (0,-1)) and there's a piece in the way, don't allow the move.
@@ -75,10 +75,10 @@
 //  
 
 Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(false), BR2_moved(false), BK_moved(false),
-white_in_checkmate(false), black_in_checkmate(false){
+    white_won(false), black_won(false){
     // All moves on the board will be in the format (row, col)
     table = {
-            {"BR2", "BN", "BB", "BQ", "BK", "BB", "BN", "BR1"},
+            {"BR1", "BN", "BB", "BQ", "BK", "BB", "BN", "BR2"},
             {"BP" , "BP", "BP", "BP", "BP", "BP", "BP", "BP" },
             {"  " , "  ", "  ", "  ", "  ", "  ", "  ", "  " },
             {"  " , "  ", "  ", "  ", "  ", "  ", "  ", "  " },
@@ -87,7 +87,19 @@ white_in_checkmate(false), black_in_checkmate(false){
             {"WP" , "WP", "WP", "WP", "WP", "WP", "WP", "WP" },
             {"WR1", "WN", "WB", "WQ", "WK", "WB", "WN", "WR2"}
         };
+
+    knight_move_vectors = {
+        {2,1},{1,2},{-1,2},{-2,1},{-2,-1},{-1,-2},{1,-2},{2,-1}
+    };
 };
+
+bool Game::get_black_won(){
+    return this->black_won;
+}
+
+bool Game::get_white_won(){
+    return this->white_won;
+}
 
 // writes the table in a pretty format to the given buffer.
 void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
@@ -120,15 +132,12 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
 }
 
 
-bool Game::get_white_in_checkmate(){
-    return this->white_in_checkmate;
-}
-
-bool Game::get_black_in_checkmate(){
-    return this->black_in_checkmate;
-}
-
 bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
+    char start_piece_type;
+    char start_piece_color;
+    bool attempting_left_castle; // this will refer to castles on the left side of the board, i.e. BK and BR1, or WK and WR1
+    bool attempting_right_castle; // this will refer to castles on the right side of the board, i.e. BK and BR2, or WK and WR2
+
     //////////////////////////////////////
     //// Checking input /////
     //////////////////////////////////////
@@ -152,13 +161,62 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     std::string piece = table[start_coord.first][start_coord.second];
 
     // saving color and type
-    char start_coord_color = piece.at(0);
-    if (player_color != start_coord_color)
+    start_piece_color = piece.at(0);
+    if (player_color != start_piece_color)
         return false;
 
     // saving piece type
-    char start_piece_type = piece.at(1);
+    start_piece_type = piece.at(1);
 
+    //////////////////////////////////////
+    //// Validating movement /////
+    //////////////////////////////////////
+    std::pair<int,int> move_vector = {end_coord.first-start_coord.first, end_coord.second-end_coord.second};
+
+    if (move_vector.first == 0 && move_vector.second == 0) // if not moving at all, return false
+        return false;
+
+    if (start_piece_type == 'R'){
+        if (move_vector.first != 0 && move_vector.second != 0) // either row-movement or col-movement must be 0 for a rook
+            return false;
+    } else if (start_piece_type == 'N'){
+        bool valid_flag = false;
+        for (std::pair<int,int> p : knight_move_vectors){ // loop through all the possible knight movement vectors
+            if (p.first == move_vector.first && p.second == move_vector.second)
+                valid_flag = true;
+                break;
+        }
+        if (!valid_flag)
+            return false;
+    } else if (start_piece_type == 'B'){
+        if (move_vector.first != move_vector.second) // for diagonal movement, row-movement and col-movement must be equal
+            return false;
+    } else if (start_piece_type == 'Q'){
+        if (move_vector.first != 0 && move_vector.second != 0){ // if not straight line movement
+            if (move_vector.first != move_vector.second) // if not diagonal movement
+                return false;
+        }
+    } else if (start_piece_type == 'K'){
+        if (start_piece_color=='W' && !WK_moved && move_vector.first==0){ // first we check for white castleing
+            if (move_vector.second==-2 && !WR1_moved)
+                attempting_left_castle = true;
+            if (move_vector.second==2 && !WR2_moved)
+                attempting_right_castle = true;
+        } else if (start_piece_color=='B' && !BK_moved && move_vector.first==0){ // then we check for black castleing
+            if (move_vector.second==-2 && !BR1_moved)
+                attempting_left_castle = true;
+            if (move_vector.second==2 && !BR2_moved)
+                attempting_right_castle = true;
+        } else if (std::abs(move_vector.first) > 1 || std::abs(move_vector.second) > 1){ // If not castleing, we check
+// that king is only moving 1 tile away
+            return false;
+        }
+    } else if (start_piece_type == 'P'){
+        if (move_vector.first == 2){
+            if (!(start_piece_color == 'W' && start_coord.first == 2))
+                return false;
+        }
+    }
 
 
 

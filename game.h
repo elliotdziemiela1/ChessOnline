@@ -1,5 +1,7 @@
 #include <vector>
 #include <string>
+#include <map>
+#include <utility>
 #include "utils.h"
 
 
@@ -38,10 +40,7 @@
 //      starting position and the color of the piece. Otherwise, the move won't be accepted.
 //  4) The difference vector (as a pair<int,int>) will be calculated (i.e. for a bishop moving from (1,3) to (3,5), vector is (3-1,5-3) = (2,2)),
 //      or (i.e. for a queen moving left from (3,8) to (3,2), vector is (3-3,2-8) = (0,-6)).
-//  5) The piece type will be used to index into a hash table (map) where the keys are piece types and 
-//      the values are vector<pair<int,int>> containing every possible movement vector for that piece. If no match is found
-//      in that vector for the movement difference vector we just calculated, the server sends "move invalid" and waits for 
-//      that client to submit a new move (go back to step 1).
+//  5) The movement difference vector is examined based on the piece type to determine validity. If the move is deemed invalid, don't allow it.
 //  6) If a match is found, the next steps depend on the piece type.
 //      6a) if the piece is a pawn
 //          6ai) if the movment is forward by one ((1,0) or (-1,0)) and there's a piece in the way, don't allow the move.
@@ -81,15 +80,17 @@
 class Game {
     public:
         Game();
-        bool get_white_in_checkmate();
-        bool get_black_in_checkmate();
+        bool get_white_won();
+        bool get_black_won();
         bool make_move(char buf[DEFAULT_BUFLEN], char player_color);
         void format_table_to_print(char buf[DEFAULT_BUFLEN]);
     private:
-        bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king moved flags
-        bool BR1_moved, BR2_moved, BK_moved; // black rooks and black king moved flags
+        bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king-moved flags
+        bool BR1_moved, BR2_moved, BK_moved; // black rooks and black king-moved flags
 
-        bool white_in_checkmate, black_in_checkmate;
+        bool white_won, black_won;
 
-        std::vector<std::vector<std::string>> table;
+        std::vector<std::vector<std::string>> table; // The 8x8 table used by the code
+
+        std::vector<std::pair<int,int>> knight_move_vectors; // a map of all the valid movement vectors for a knight
 };

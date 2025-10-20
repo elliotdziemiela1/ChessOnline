@@ -284,7 +284,7 @@ $S";
             return 1;
         }
 
-    } while (!game.get_white_in_checkmate() && !game.get_black_in_checkmate());
+    } while (!game.get_white_won() && !game.get_black_won());
 
     // connection closed (iResult == 0)
     iResult = shutdown(clientSocketOne, SD_SEND);
