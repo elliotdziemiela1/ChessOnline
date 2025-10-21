@@ -300,9 +300,38 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     if (piece.at(1) == 'Q'){
         if (move_vector.first != 0 && move_vector.second != 0){ // if not straight line movement
-            if (move_vector.first != move_vector.second) // if not diagonal movement
+            if (std::abs(move_vector.first) != std::abs(move_vector.second)) // if not diagonal movement
                 return false;
         }
+        
+        // vector is valid, now check for collisions in the path leading up to end_coord
+        std::pair<int,int> iterative_coord = start_coord;
+        do {
+            // increment the iterative coordinate based on direction of move_vector
+            if (move_vector.first > 0)
+                iterative_coord.first++;
+            else if (move_vector.first < 0)
+                iterative_coord.first--;
+            
+            if (move_vector.second > 0)
+                iterative_coord.second++;
+            else if (move_vector.second < 0)
+                iterative_coord.second--;
+
+            // if a piece is in the way
+            if (iterative_coord != end_coord && table[iterative_coord.first][iterative_coord.second] != "  ")
+                return false;
+        } while (iterative_coord != end_coord);
+
+        // check if we're removing a piece
+        if (end_piece.at(0) == 'W')
+            white_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'B')
+            black_dead_list.push_back(end_piece);
+
+        // make move
+        table[start_coord.first][start_coord.second] = "  ";
+        table[end_coord.first][end_coord.second] = piece;
 
         return true;
     } 
