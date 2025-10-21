@@ -303,7 +303,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             if (std::abs(move_vector.first) != std::abs(move_vector.second)) // if not diagonal movement
                 return false;
         }
-        
+
         // vector is valid, now check for collisions in the path leading up to end_coord
         std::pair<int,int> iterative_coord = start_coord;
         do {
@@ -340,20 +340,76 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //// Handling king movement /////
     //////////////////////////////////////
     if (piece.at(1) == 'K'){
-        if (piece.at(0)=='W' && !WK_moved && move_vector.first==0){ // first we check for white castleing
-            if (move_vector.second==-2 && !WR1_moved)
-                attempting_left_castle = true;
-            if (move_vector.second==2 && !WR2_moved)
-                attempting_right_castle = true;
-        } else if (piece.at(0)=='B' && !BK_moved && move_vector.first==0){ // then we check for black castleing
-            if (move_vector.second==-2 && !BR1_moved)
-                attempting_left_castle = true;
-            if (move_vector.second==2 && !BR2_moved)
-                attempting_right_castle = true;
+        if (move_vector.second==-2 && move_vector.first==0){ // first we check for left castleing
+            if (piece.at(0)=='W' && !WK_moved  && !WR1_moved){ // attempting white left castle
+                // check for collisions between the white king and the left rook
+                if (table[7][3] != "  " || table[7][2] != "  " || table[7][1] != "  ")
+                    return false;
+                // make move
+                table[7][2] = "WK";
+                table[7][3] = "WR1";
+                table[7][4] = "  ";
+                table[7][0] = "  ";
+                WK_moved = true;
+                return true;
+            } else if (piece.at(0)=='B' && !BK_moved  && !BR1_moved){ // attempting black left castle
+                // check for collisions between the black king and the left rook
+                if (table[0][3] != "  " || table[0][2] != "  " || table[0][1] != "  ")
+                    return false;
+                // make move
+                table[0][2] = "BK";
+                table[0][3] = "BR1";
+                table[0][4] = "  ";
+                table[0][0] = "  ";
+                BK_moved = true;
+                return true;
+            }
+        } else if (move_vector.second==2 && move_vector.first==0){ // then we check for right castleing
+            if (piece.at(0)=='W' && !WK_moved  && !WR2_moved){ // attempting white right castle
+                // check for collisions between the white king and the right rook
+                if (table[7][5] != "  " || table[7][6] != "  ")
+                    return false;
+                // make move
+                table[7][6] = "WK";
+                table[7][5] = "WR2";
+                table[7][4] = "  ";
+                table[7][7] = "  ";
+                WK_moved = true;
+                return true;
+            } else if (piece.at(0)=='B' && !BK_moved  && !BR2_moved){ // attempting black right castle
+                // check for collisions between the black king and the right rook
+                if (table[0][5] != "  " || table[0][6] != "  ")
+                    return false;
+                // make move
+                table[0][5] = "BK";
+                table[0][6] = "BR2";
+                table[0][4] = "  ";
+                table[0][7] = "  ";
+                BK_moved = true;
+                return true;
+            }
         } else if (std::abs(move_vector.first) > 1 || std::abs(move_vector.second) > 1){ // If not castleing, we check
 // that king is only moving 1 tile away
             return false;
         }
+
+        // if removing a piece, add it to dead list
+        if (end_piece.at(0) == 'W')
+            white_dead_list.push_back(end_piece);
+        else if (end_piece.at(0) == 'B')
+            black_dead_list.push_back(end_piece);
+        
+
+        // set king moved flag
+        if (piece.at(0) == 'W')
+            WK_moved = true;
+        else if (piece.at(0) == 'B')
+            BK_moved = true;
+
+
+        // make move
+        table[start_coord.first][start_coord.second] = "  ";
+        table[end_coord.first][end_coord.second] = piece;
 
         return true;
     } 
