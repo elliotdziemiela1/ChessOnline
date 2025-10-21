@@ -75,7 +75,7 @@
 //  
 
 Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(false), BR2_moved(false), BK_moved(false),
-    white_won(false), black_won(false){
+    white_won(false), black_won(false), replace_pawn_flag(false){
     // All moves on the board will be in the format (row, col)
     table = {
             {"BR1", "BN", "BB", "BQ", "BK", "BB", "BN", "BR2"},
@@ -418,10 +418,85 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //// Handling pawn movement /////
     //////////////////////////////////////
     if (piece.at(1) == 'P'){
-        // REMEMBER MOVING TOWARDS BLACK SIDE IS NEGATIVE MOVMENT, AND TOWARDS WHITE SIDE IS POSITIVE MOVEMENT
-        if (move_vector.first == 2){
-            if (!(piece.at(0) == 'W' && start_coord.first == 2))
+        // if player wants to move pawn two spaces
+        if (move_vector.first == 2 && move_vector.second == 0){ // 2 is movement towards white side
+            // check that pawn is of color and position to perform such a move
+            if (!(piece.at(0) == 'B' && start_coord.first == 1))
                 return false;
+
+            // check if there's a collision
+            if (table[start_coord.first+1][start_coord.second] != "  ")
+                return false;
+        } else if (move_vector.first == -2  && move_vector.second == 0){ // -2 is movement towards black side
+            // check that pawn is of color and position to perform such a move
+            if (!(piece.at(0) == 'W' && start_coord.first == 6))
+                return false;
+
+            // check if there's a collision
+            if (table[start_coord.first-1][start_coord.second] != "  ")
+                return false;
+        } else if (move_vector.first == 1 && move_vector.second == 1){ // movement down and right
+            // check that pawn is black
+            if (piece.at(0) != 'B')
+                return false;
+
+            // piece at end_coordinate must be white
+            if (end_piece.at(0) == 'W')
+                white_dead_list.push_back(end_piece);
+            else 
+                return false;
+
+        } else if (move_vector.first == 1 && move_vector.second == -1){ // movement down and left
+            // check that pawn is black
+            if (piece.at(0) != 'B')
+                return false;
+
+            // piece at end_coordinate must be white
+            if (end_piece.at(0) == 'W')
+                white_dead_list.push_back(end_piece);
+            else 
+                return false;
+
+        } else if (move_vector.first == -1 && move_vector.second == 1){ // movement up and right
+            // check that pawn is white
+            if (piece.at(0) != 'W')
+                return false;
+
+            // piece at end_coordinate must be black
+            if (end_piece.at(0) == 'B')
+                black_dead_list.push_back(end_piece);
+            else 
+                return false;
+
+        } else if (move_vector.first == -1 && move_vector.second == -1){ // movement up and left
+            // check that pawn is white
+            if (piece.at(0) != 'W')
+                return false;
+
+            // piece at end_coordinate must be black
+            if (end_piece.at(0) == 'B')
+                black_dead_list.push_back(end_piece);
+            else 
+                return false;
+        } else if (move_vector.first == 1 && move_vector.second == 0){ // movement down
+            // check that pawn is black
+            if (piece.at(0) != 'B')
+                return false;
+
+            // check that end piece is empty
+            if (end_piece != "  ")
+                return false;
+        } else if (move_vector.first == -1 && move_vector.second == 0){ // movement up
+            // check that pawn is white
+            if (piece.at(0) != 'W')
+                return false;
+
+            // check that end piece is empty
+            if (end_piece != "  ")
+                return false;
+        } else {
+            // all possible pawn moves are enumerated above, so return false;
+            return false;
         }
 
         table[start_coord.first][start_coord.second] = "  ";
@@ -430,14 +505,5 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         return true;
     }
 
-
-
-    //////////////////////////////////////
-    //// Making Move /////
-    //////////////////////////////////////
-    // TODO remove this in finished product
-    table[start_coord.first][start_coord.second] = "  ";
-    table[end_coord.first][end_coord.second] = piece;
-
-    return true;
+    return false;
 };

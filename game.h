@@ -90,6 +90,8 @@ class Game {
 
         bool white_won, black_won;
 
+        bool replace_pawn_flag;
+
         std::vector<std::vector<std::string>> table; // The 8x8 table used by the code
 
         std::vector<std::pair<int,int>> knight_move_vectors; // a map of all the valid movement vectors for a knight
