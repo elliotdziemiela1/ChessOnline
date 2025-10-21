@@ -156,6 +156,8 @@ $S";
         return 1;
     }
 
+    enum MoveResult move_result;
+
     do {
         
         ///////////////////////////////
@@ -169,7 +171,7 @@ $S";
         }
         printf("client 1's move: %s", recvbuf);
 
-        while(!game.make_move(recvbuf, 'W')){ // if condition is false, move was invalid and server requests another
+        while((move_result = game.make_move(recvbuf, 'W')) == MoveResult::Invalid){ // if condition is false, move was invalid and server requests another
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 1 send error: %d\n", WSAGetLastError());
@@ -231,7 +233,7 @@ $S";
         }
         printf("client 2's move: %s", recvbuf);
 
-        while(!game.make_move(recvbuf, 'B')){ // if condition is false, move was invalid and server requests another
+        while((move_result = game.make_move(recvbuf, 'B')) == MoveResult::Invalid){ // if condition is false, move was invalid and server requests another
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
                 printf("client 2 send error: %d\n", WSAGetLastError());

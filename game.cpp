@@ -75,7 +75,7 @@
 //  
 
 Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(false), BR2_moved(false), BK_moved(false),
-    white_won(false), black_won(false), replace_pawn_flag(false){
+    white_won(false), black_won(false), replace_coordinates({0,0}){
     // All moves on the board will be in the format (row, col)
     table = {
             {"BR1", "BN", "BB", "BQ", "BK", "BB", "BN", "BR2"},
@@ -134,8 +134,10 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
     }
 }
 
+// TODO need to check edge case where replacement wants to happen but dead list is empty
 
-bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
+
+MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     bool attempting_left_castle; // this will refer to castles on the left side of the board, i.e. BK and BR1, or WK and WR1
     bool attempting_right_castle; // this will refer to castles on the right side of the board, i.e. BK and BR2, or WK and WR2
     std::string piece; // the piece being moved
@@ -144,11 +146,11 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     //// Checking input /////
     //////////////////////////////////////
-    if (buf[0] < 'a' || buf[0] > 'h') return false;
-    if (buf[1] < '1' || buf[1] > '8') return false;
-    if (buf[2] < 'a' || buf[2] > 'h') return false;
-    if (buf[3] < '1' || buf[3] > '8') return false;
-    if (buf[4] != '\n' && buf[5] != '\0') return false;
+    if (buf[0] < 'a' || buf[0] > 'h') return MoveResult::Invalid;
+    if (buf[1] < '1' || buf[1] > '8') return MoveResult::Invalid;
+    if (buf[2] < 'a' || buf[2] > 'h') return MoveResult::Invalid;
+    if (buf[3] < '1' || buf[3] > '8') return MoveResult::Invalid;
+    if (buf[4] != '\n' && buf[5] != '\0') return MoveResult::Invalid;
 
     //////////////////////////////////////
     //// Reformatting /////
@@ -166,7 +168,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
 
     // sanity check: piece being moved is the same as the current player's piece
     if (player_color != piece.at(0))
-        return false;
+        return MoveResult::Invalid;
 
 
     //////////////////////////////////////
@@ -174,20 +176,20 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     std::pair<int,int> move_vector = {end_coord.first-start_coord.first, end_coord.second-start_coord.second};
 
-    // sanity check: if not moving at all, return false
+    // sanity check: if not moving at all, return MoveResult::Invalid
     if (move_vector.first == 0 && move_vector.second == 0) 
-        return false;
+        return MoveResult::Invalid;
 
-    // sanity check: if friendly piece at endcoord, return false
+    // sanity check: if friendly piece at endcoord, return MoveResult::Invalid
     if (piece.at(0) == end_piece.at(0))
-        return false;
+        return MoveResult::Invalid;
     
     //////////////////////////////////////
     //// Handling rook movement /////
     //////////////////////////////////////
     if (piece.at(1) == 'R'){
         if (move_vector.first != 0 && move_vector.second != 0) // either row-movement or col-movement must be 0 for a rook
-            return false;
+            return MoveResult::Invalid;
 
         // vector is valid, now check for collisions in the path leading up to end_coord
         std::pair<int,int> iterative_coord = start_coord;
@@ -203,7 +205,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
                 iterative_coord.second--;
             // if a piece is in the way
             if (iterative_coord != end_coord && table[iterative_coord.first][iterative_coord.second] != "  ")
-                return false;
+                return MoveResult::Invalid;
         } while (iterative_coord != end_coord);
 
         // check if we're removing a piece
@@ -226,7 +228,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         else if (piece == "BR2")
             BR2_moved = true;
 
-        return true;
+        return MoveResult::Valid;
     } 
 
     //////////////////////////////////////
@@ -241,7 +243,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             }
         }
         if (!valid_flag)
-            return false;
+            return MoveResult::Invalid;
 
         // check if we're removing a piece
         if (end_piece.at(0) == 'W')
@@ -253,7 +255,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
         
-        return true;
+        return MoveResult::Valid;
     } 
 
     //////////////////////////////////////
@@ -261,7 +263,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     //////////////////////////////////////
     if (piece.at(1) == 'B'){
         if (std::abs(move_vector.first) != std::abs(move_vector.second)) // for diagonal movement, row-movement and col-movement must be equal
-            return false;
+            return MoveResult::Invalid;
         
         // vector is valid, now check for collisions in the path leading up to end_coord
         std::pair<int,int> iterative_coord = start_coord;
@@ -279,7 +281,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
 
             // if a piece is in the way
             if (iterative_coord != end_coord && table[iterative_coord.first][iterative_coord.second] != "  ")
-                return false;
+                return MoveResult::Invalid;
         } while (iterative_coord != end_coord);
 
         // check if we're removing a piece
@@ -292,7 +294,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
 
-        return true;
+        return MoveResult::Valid;
     } 
     
     //////////////////////////////////////
@@ -301,7 +303,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     if (piece.at(1) == 'Q'){
         if (move_vector.first != 0 && move_vector.second != 0){ // if not straight line movement
             if (std::abs(move_vector.first) != std::abs(move_vector.second)) // if not diagonal movement
-                return false;
+                return MoveResult::Invalid;
         }
 
         // vector is valid, now check for collisions in the path leading up to end_coord
@@ -320,7 +322,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
 
             // if a piece is in the way
             if (iterative_coord != end_coord && table[iterative_coord.first][iterative_coord.second] != "  ")
-                return false;
+                return MoveResult::Invalid;
         } while (iterative_coord != end_coord);
 
         // check if we're removing a piece
@@ -333,7 +335,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
 
-        return true;
+        return MoveResult::Valid;
     } 
     
     //////////////////////////////////////
@@ -344,53 +346,53 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             if (piece.at(0)=='W' && !WK_moved  && !WR1_moved){ // attempting white left castle
                 // check for collisions between the white king and the left rook
                 if (table[7][3] != "  " || table[7][2] != "  " || table[7][1] != "  ")
-                    return false;
+                    return MoveResult::Invalid;
                 // make move
                 table[7][2] = "WK";
                 table[7][3] = "WR1";
                 table[7][4] = "  ";
                 table[7][0] = "  ";
                 WK_moved = true;
-                return true;
+                return MoveResult::Valid;
             } else if (piece.at(0)=='B' && !BK_moved  && !BR1_moved){ // attempting black left castle
                 // check for collisions between the black king and the left rook
                 if (table[0][3] != "  " || table[0][2] != "  " || table[0][1] != "  ")
-                    return false;
+                    return MoveResult::Invalid;
                 // make move
                 table[0][2] = "BK";
                 table[0][3] = "BR1";
                 table[0][4] = "  ";
                 table[0][0] = "  ";
                 BK_moved = true;
-                return true;
+                return MoveResult::Valid;
             }
         } else if (move_vector.second==2 && move_vector.first==0){ // then we check for right castleing
             if (piece.at(0)=='W' && !WK_moved  && !WR2_moved){ // attempting white right castle
                 // check for collisions between the white king and the right rook
                 if (table[7][5] != "  " || table[7][6] != "  ")
-                    return false;
+                    return MoveResult::Invalid;
                 // make move
                 table[7][6] = "WK";
                 table[7][5] = "WR2";
                 table[7][4] = "  ";
                 table[7][7] = "  ";
                 WK_moved = true;
-                return true;
+                return MoveResult::Valid;
             } else if (piece.at(0)=='B' && !BK_moved  && !BR2_moved){ // attempting black right castle
                 // check for collisions between the black king and the right rook
                 if (table[0][5] != "  " || table[0][6] != "  ")
-                    return false;
+                    return MoveResult::Invalid;
                 // make move
                 table[0][5] = "BK";
                 table[0][6] = "BR2";
                 table[0][4] = "  ";
                 table[0][7] = "  ";
                 BK_moved = true;
-                return true;
+                return MoveResult::Valid;
             }
         } else if (std::abs(move_vector.first) > 1 || std::abs(move_vector.second) > 1){ // If not castleing, we check
 // that king is only moving 1 tile away
-            return false;
+            return MoveResult::Invalid;
         }
 
         // if removing a piece, add it to dead list
@@ -411,7 +413,7 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
 
-        return true;
+        return MoveResult::Valid;
     } 
     
     //////////////////////////////////////
@@ -422,88 +424,93 @@ bool Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         if (move_vector.first == 2 && move_vector.second == 0){ // 2 is movement towards white side
             // check that pawn is of color and position to perform such a move
             if (!(piece.at(0) == 'B' && start_coord.first == 1))
-                return false;
+                return MoveResult::Invalid;
 
             // check if there's a collision
             if (table[start_coord.first+1][start_coord.second] != "  ")
-                return false;
+                return MoveResult::Invalid;
         } else if (move_vector.first == -2  && move_vector.second == 0){ // -2 is movement towards black side
             // check that pawn is of color and position to perform such a move
             if (!(piece.at(0) == 'W' && start_coord.first == 6))
-                return false;
+                return MoveResult::Invalid;
 
             // check if there's a collision
             if (table[start_coord.first-1][start_coord.second] != "  ")
-                return false;
+                return MoveResult::Invalid;
         } else if (move_vector.first == 1 && move_vector.second == 1){ // movement down and right
             // check that pawn is black
             if (piece.at(0) != 'B')
-                return false;
+                return MoveResult::Invalid;
 
             // piece at end_coordinate must be white
             if (end_piece.at(0) == 'W')
                 white_dead_list.push_back(end_piece);
             else 
-                return false;
+                return MoveResult::Invalid;
 
         } else if (move_vector.first == 1 && move_vector.second == -1){ // movement down and left
             // check that pawn is black
             if (piece.at(0) != 'B')
-                return false;
+                return MoveResult::Invalid;
 
             // piece at end_coordinate must be white
             if (end_piece.at(0) == 'W')
                 white_dead_list.push_back(end_piece);
             else 
-                return false;
+                return MoveResult::Invalid;
 
         } else if (move_vector.first == -1 && move_vector.second == 1){ // movement up and right
             // check that pawn is white
             if (piece.at(0) != 'W')
-                return false;
+                return MoveResult::Invalid;
 
             // piece at end_coordinate must be black
             if (end_piece.at(0) == 'B')
                 black_dead_list.push_back(end_piece);
             else 
-                return false;
+                return MoveResult::Invalid;
 
         } else if (move_vector.first == -1 && move_vector.second == -1){ // movement up and left
             // check that pawn is white
             if (piece.at(0) != 'W')
-                return false;
+                return MoveResult::Invalid;
 
             // piece at end_coordinate must be black
             if (end_piece.at(0) == 'B')
                 black_dead_list.push_back(end_piece);
             else 
-                return false;
+                return MoveResult::Invalid;
         } else if (move_vector.first == 1 && move_vector.second == 0){ // movement down
             // check that pawn is black
             if (piece.at(0) != 'B')
-                return false;
+                return MoveResult::Invalid;
 
             // check that end piece is empty
             if (end_piece != "  ")
-                return false;
+                return MoveResult::Invalid;
         } else if (move_vector.first == -1 && move_vector.second == 0){ // movement up
             // check that pawn is white
             if (piece.at(0) != 'W')
-                return false;
+                return MoveResult::Invalid;
 
             // check that end piece is empty
             if (end_piece != "  ")
-                return false;
+                return MoveResult::Invalid;
         } else {
-            // all possible pawn moves are enumerated above, so return false;
-            return false;
+            // all possible pawn moves are enumerated above, so return MoveResult::Invalid;
+            return MoveResult::Invalid;
         }
 
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
 
-        return true;
+        if (end_coord.first == 7 || end_coord.first == 0){ // if at the top or bottom of board, player will get to replace pawn
+            replace_coordinates = end_coord;
+            return MoveResult::ValidWithReplace;
+        }
+
+        return MoveResult::Valid;
     }
 
-    return false;
+    return MoveResult::Invalid;
 };

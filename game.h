@@ -82,7 +82,8 @@ class Game {
         Game();
         bool get_white_won();
         bool get_black_won();
-        bool make_move(char buf[DEFAULT_BUFLEN], char player_color);
+        MoveResult make_move(char buf[DEFAULT_BUFLEN], char player_color); // makes a move and returns whether it was invalid, valid, or 
+        // if a pawn was moved to the otherside and needs to be replaced by a dead piece
         void format_table_to_print(char buf[DEFAULT_BUFLEN]);
     private:
         bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king-moved flags
@@ -90,7 +91,7 @@ class Game {
 
         bool white_won, black_won;
 
-        bool replace_pawn_flag;
+        std::pair<int,int> replace_coordinates; // coordinates of the pawn to be replaced
 
         std::vector<std::vector<std::string>> table; // The 8x8 table used by the code
 
