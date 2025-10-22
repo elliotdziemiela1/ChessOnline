@@ -231,6 +231,10 @@ R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
             return 1;
         }
 
+        // if black king was just taken, break from the game loop
+        if (game.get_white_won())
+            break;
+
         // Now sending confirmation to client 1 and telling them to wait for another message.
         sendbuf = "Nice move. Now waiting for Black's move.$R";
         if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
@@ -327,6 +331,10 @@ R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
             return 1;
         }
 
+        // if white king was just taken, break from the game loop
+        if (game.get_black_won())
+            break;
+
         // Now sending confirmation to client 2 and telling them to wait for another message.
         sendbuf = "Nice move. Now waiting for White's move.$R";
         if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
@@ -355,7 +363,46 @@ R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
             return 1;
         }
 
-    } while (!game.get_white_won() && !game.get_black_won());
+    } while (1);
+
+    // handle cases when the game has been won.
+    if (game.get_white_won()){
+        sendbuf = "White has won the game!!!!!!!!!!!!!!";
+        if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Client 1 game finish send to client 1 error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+        tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 2 to wait for message from server after recieving table
+        if (send(clientSocketTwo, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Sending victory table to client 2 error: %d", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+        if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Client 1 game finish send to client 2 error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+    } else if (game.get_black_won()){
+        sendbuf = "Black has won the game!!!!!!!!!!!!!!";
+        if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Client 2 game finish send to client 2 error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+        tablebuf[PRINTED_BOARD_SIZE+1] = 'R'; // tell client 2 to wait for message from server after recieving table
+        if (send(clientSocketOne, tablebuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Sending victory table to client 1 error: %d", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+        if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+            printf("Client 2 game finish send to client 1 error: %d\n", WSAGetLastError());
+            cleanup(clientSocketOne, clientSocketTwo);
+            return 1;
+        }
+    }
 
     // connection closed (iResult == 0)
     iResult = shutdown(clientSocketOne, SD_SEND);

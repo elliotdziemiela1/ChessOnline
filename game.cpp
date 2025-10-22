@@ -249,6 +249,12 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         else if (piece == "BR2")
             BR2_moved = true;
 
+        // check if game ends
+        if (end_piece == "WK")
+            black_won = true;
+        else if (end_piece == "BK")
+            white_won = true;
+
         return MoveResult::Valid;
     } 
 
@@ -279,6 +285,12 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
         
+        // check if game ends
+        if (end_piece == "WK")
+            black_won = true;
+        else if (end_piece == "BK")
+            white_won = true;
+
         return MoveResult::Valid;
     } 
 
@@ -320,6 +332,12 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         // make move
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
+
+        // check if game ends
+        if (end_piece == "WK")
+            black_won = true;
+        else if (end_piece == "BK")
+            white_won = true;
 
         return MoveResult::Valid;
     } 
@@ -364,6 +382,12 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         // make move
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
+
+        // check if game ends
+        if (end_piece == "WK")
+            black_won = true;
+        else if (end_piece == "BK")
+            white_won = true;
 
         return MoveResult::Valid;
     } 
@@ -441,6 +465,12 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         else if (piece.at(0) == 'B')
             BK_moved = true;
 
+
+        // check if game ends
+        if (end_piece == "WK")
+            black_won = true;
+        else if (end_piece == "BK")
+            white_won = true;
 
         // make move
         table[start_coord.first][start_coord.second] = "  ";
@@ -545,6 +575,12 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             replace_coordinates = end_coord;
             return MoveResult::ValidWithReplace;
         }
+
+        // check if game ends
+        if (end_piece == "WK")
+            black_won = true;
+        else if (end_piece == "BK")
+            white_won = true;
 
         return MoveResult::Valid;
     }
