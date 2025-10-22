@@ -85,6 +85,8 @@ class Game {
         MoveResult make_move(char buf[DEFAULT_BUFLEN], char player_color); // makes a move and returns whether it was invalid, valid, or 
         // if a pawn was moved to the otherside and needs to be replaced
         void format_table_to_print(char buf[DEFAULT_BUFLEN]);
+        void promote_pawn(char new_piece);
+        bool static validate_promotion_input(char buf[DEFAULT_BUFLEN]);
     private:
         bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king-moved flags
         bool BR1_moved, BR2_moved, BK_moved; // black rooks and black king-moved flags

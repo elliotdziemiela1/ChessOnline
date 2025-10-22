@@ -97,11 +97,11 @@ Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(fa
 };
 
 bool Game::get_black_won(){
-    return this->black_won;
+    return black_won;
 }
 
 bool Game::get_white_won(){
-    return this->white_won;
+    return white_won;
 }
 
 // writes the table in a pretty format to the given buffer.
@@ -138,7 +138,22 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
     }
 }
 
+bool Game::validate_promotion_input(char buf[DEFAULT_BUFLEN]){
+    if ((buf[0]=='R' || buf[0]=='N' || buf[0]=='B' || buf[0]=='Q') && buf[1]=='\n' && buf[2]=='\0')
+        return true;
+    else 
+        return false;
+}
 
+void Game::promote_pawn(char new_piece){
+    std::string replacement = "  ";
+    if (replace_coordinates.first == 0) // if promoting a white pawn
+        replacement[0] = 'W';
+    else 
+        replacement[0] = 'B';
+    replacement[1] = new_piece;
+    table[replace_coordinates.first][replace_coordinates.second] = replacement;
+}
 
 MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     bool attempting_left_castle; // this will refer to castles on the left side of the board, i.e. BK and BR1, or WK and WR1

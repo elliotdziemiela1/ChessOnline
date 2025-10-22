@@ -163,6 +163,8 @@ $S";
         ///////////////////////////////
         /// Client 1 (White) move ////
         /////////////////////////////
+        
+        // recieve client 1's move
         printf("Waiting for client 1 to make move.\n");
         if (recv(clientSocketOne,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
             printf("Client 1 receive error: %d\n", WSAGetLastError());
@@ -171,6 +173,7 @@ $S";
         }
         printf("client 1's move: %s", recvbuf);
 
+        // check that move is valid. if not, keep recieving moves until it is
         while((move_result = game.make_move(recvbuf, 'W')) == MoveResult::Invalid){ // if condition is false, move was invalid and server requests another
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
@@ -186,6 +189,38 @@ $S";
             }
             printf("client 1's move: %s", recvbuf);
         } 
+
+        // check if move results in a pawn promotion
+        if (move_result == MoveResult::ValidWithReplace){
+            printf("Client 1 must promote pawn.");
+            while (1){ // loop to take input from client until it's a valid replacement piece
+                sendbuf = "What piece will you promote your pawn to? Type one uppercase letter; \n\
+R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
+                if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+                    printf("Promotion send error: %d", WSAGetLastError());
+                    cleanup(clientSocketOne, clientSocketTwo);
+                    return 1;
+                }
+                if (recv(clientSocketOne, recvbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+                    printf("Promotion recieve error: %d", WSAGetLastError());
+                    cleanup(clientSocketOne, clientSocketTwo);
+                    return 1;
+                }
+                if (Game::validate_promotion_input(recvbuf)){
+                    // if recvbuf is valid
+                    break;
+                } else {
+                    sendbuf = "Invalid input. Try again.\n$R";
+                    if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+                        printf("Promotion invalid send error: %d", WSAGetLastError());
+                        cleanup(clientSocketOne, clientSocketTwo);
+                        return 1;
+                    }
+                }
+            }
+            game.promote_pawn(recvbuf[0]);
+        }
+
 
         // Send table again to show client 1 where they moved
         game.format_table_to_print(tablebuf); // update the contents of the printed table buffer
@@ -225,6 +260,8 @@ $S";
         //////////////////////////////
         /// Client 2 (Black) move ////
         //////////////////////////////
+
+        // recieve client 2's move
         printf("Waiting for client 2 to make move.\n");
         if (recv(clientSocketTwo,recvbuf,DEFAULT_BUFLEN,0) == SOCKET_ERROR){
             printf("Client 2 receive error: %d\n", WSAGetLastError());
@@ -233,6 +270,7 @@ $S";
         }
         printf("client 2's move: %s", recvbuf);
 
+        // check that move is valid. if not, keep recieving moves until it is
         while((move_result = game.make_move(recvbuf, 'B')) == MoveResult::Invalid){ // if condition is false, move was invalid and server requests another
             sendbuf = "Invalid move. Try again:$S";
             if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
@@ -248,6 +286,37 @@ $S";
             }
             printf("client 2's move: %s", recvbuf);
         } 
+
+        // check if move results in a pawn promotion
+        if (move_result == MoveResult::ValidWithReplace){
+            printf("Client 2 must promote pawn.");
+            while (1){ // loop to take input from client until it's a valid replacement piece
+                sendbuf = "What piece will you promote your pawn to? Type one uppercase letter; \n\
+R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
+                if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+                    printf("Promotion send error: %d", WSAGetLastError());
+                    cleanup(clientSocketOne, clientSocketTwo);
+                    return 1;
+                }
+                if (recv(clientSocketTwo, recvbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+                    printf("Promotion recieve error: %d", WSAGetLastError());
+                    cleanup(clientSocketOne, clientSocketTwo);
+                    return 1;
+                }
+                if (Game::validate_promotion_input(recvbuf)){
+                    // if recvbuf is valid
+                    break;
+                } else {
+                    sendbuf = "Invalid input. Try again.\n$R";
+                    if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
+                        printf("Promotion invalid send error: %d", WSAGetLastError());
+                        cleanup(clientSocketOne, clientSocketTwo);
+                        return 1;
+                    }
+                }
+            }
+            game.promote_pawn(recvbuf[0]);
+        }
 
         // Send table again to show client 2 where they moved
         game.format_table_to_print(tablebuf); // update the contents of the printed table buffer

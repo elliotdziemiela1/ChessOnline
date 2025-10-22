@@ -9,7 +9,7 @@
 // Chess board is 8x8 tiles
 
 int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to connect to localhost
-    printf("argument passed: %s\n", argv[1]);
+    // printf("argument passed: %s\n", argv[1]);
 
     // WSA startup
     WSADATA wsaData;
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
         if (iResult == 0) {
             break;
         } else {
-            printf("connect() error: %d\n", iResult);
+            // printf("connect() error: %d\n", iResult);
             closesocket(connectSocket);
             connectSocket = INVALID_SOCKET;
         } 
