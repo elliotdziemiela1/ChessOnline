@@ -367,7 +367,7 @@ R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
 
     // handle cases when the game has been won.
     if (game.get_white_won()){
-        sendbuf = "White has won the game!!!!!!!!!!!!!!";
+        sendbuf = "White has won the game!!!!!!!!!!!!!!$E";
         if (send(clientSocketOne, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
             printf("Client 1 game finish send to client 1 error: %d\n", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);
@@ -385,7 +385,7 @@ R = Rook, N = Knight, B = Bishop, and Q = Queen.\n$S";
             return 1;
         }
     } else if (game.get_black_won()){
-        sendbuf = "Black has won the game!!!!!!!!!!!!!!";
+        sendbuf = "Black has won the game!!!!!!!!!!!!!!$E";
         if (send(clientSocketTwo, sendbuf, DEFAULT_BUFLEN, 0) == SOCKET_ERROR){
             printf("Client 2 game finish send to client 2 error: %d\n", WSAGetLastError());
             cleanup(clientSocketOne, clientSocketTwo);

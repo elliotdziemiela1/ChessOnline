@@ -97,6 +97,9 @@ int main(int argc, char* argv[]){ // Don't pass any aruguments if you want to co
                 break;
             }
             next_step = 'R';
+        } else if (next_step == 'E'){
+            printf("Server is ending the game.");
+            break;
         }
     } while (iResult > 0);
 
