@@ -75,7 +75,7 @@
 //  
 
 Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(false), BR2_moved(false), BK_moved(false),
-    white_won(false), black_won(false), replace_coordinates({0,0}){
+    white_won(false), black_won(false), replace_coordinates({0,0}), white_dead_list_idx(0), black_dead_list_idx(0){
     // All moves on the board will be in the format (row, col)
     table = {
             {"BR1", "BN", "BB", "BQ", "BK", "BB", "BN", "BR2"},
@@ -92,8 +92,8 @@ Game::Game() : WR1_moved(false), WR2_moved(false), WK_moved(false), BR1_moved(fa
         {2,1},{1,2},{-1,2},{-2,1},{-2,-1},{-1,-2},{1,-2},{2,-1}
     };
 
-    white_dead_list = {};
-    black_dead_list = {};
+    white_dead_list.assign(16,"   ");
+    black_dead_list.assign(16,"   ");
 };
 
 bool Game::get_black_won(){
@@ -107,6 +107,8 @@ bool Game::get_white_won(){
 // writes the table in a pretty format to the given buffer.
 void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
     std::vector<std::vector<char>> pretty_table = {
+        {' ',' ',black_dead_list[10].at(0),black_dead_list[10].at(1),' ',' ',black_dead_list[11].at(0),black_dead_list[11].at(1),' ',' ',black_dead_list[12].at(0),black_dead_list[12].at(1),' ',' ',black_dead_list[13].at(0),black_dead_list[13].at(1),' ',' ',black_dead_list[14].at(0),black_dead_list[14].at(1),' ',' ',black_dead_list[15].at(0),black_dead_list[15].at(1),' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\n'},
+        {' ',' ',black_dead_list[0].at(0),black_dead_list[0].at(1),' ',' ',black_dead_list[1].at(0),black_dead_list[1].at(1),' ',' ',black_dead_list[2].at(0),black_dead_list[2].at(1),' ',' ',black_dead_list[3].at(0),black_dead_list[3].at(1),' ',' ',black_dead_list[4].at(0),black_dead_list[4].at(1),' ',' ',black_dead_list[5].at(0),black_dead_list[5].at(1),' ',' ',black_dead_list[6].at(0),black_dead_list[6].at(1),' ',' ',black_dead_list[7].at(0),black_dead_list[7].at(1),' ',' ',black_dead_list[8].at(0),black_dead_list[8].at(1),' ',' ',black_dead_list[9].at(0),black_dead_list[9].at(1),' ',' ',' ','\n'},
         {' ',' ','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','\n'},
         {'8',' ','|',' ',table[0][0].at(0),table[0][0].at(1),' ','|',' ',table[0][1].at(0),table[0][1].at(1),' ','|',' ',table[0][2].at(0),table[0][2].at(1),' ','|',' ',table[0][3].at(0),table[0][3].at(1),' ','|',' ',table[0][4].at(0),table[0][4].at(1),' ','|',' ',table[0][5].at(0),table[0][5].at(1),' ','|',' ',table[0][6].at(0),table[0][6].at(1),' ','|',' ',table[0][7].at(0),table[0][7].at(1),' ','|','\n'},
         {' ',' ','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','\n'},
@@ -124,7 +126,9 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
         {' ',' ','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','\n'},
         {'1',' ','|',' ',table[7][0].at(0),table[7][0].at(1),' ','|',' ',table[7][1].at(0),table[7][1].at(1),' ','|',' ',table[7][2].at(0),table[7][2].at(1),' ','|',' ',table[7][3].at(0),table[7][3].at(1),' ','|',' ',table[7][4].at(0),table[7][4].at(1),' ','|',' ',table[7][5].at(0),table[7][5].at(1),' ','|',' ',table[7][6].at(0),table[7][6].at(1),' ','|',' ',table[7][7].at(0),table[7][7].at(1),' ','|','\n'},
         {' ',' ','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','-','-','-','-','+','\n'},
-        {' ',' ',' ',' ','a',' ',' ',' ',' ','b',' ',' ',' ',' ','c',' ',' ',' ',' ','d',' ',' ',' ',' ','e',' ',' ',' ',' ','f',' ',' ',' ',' ','g',' ',' ',' ',' ','h',' ',' ',' ','\n'}
+        {' ',' ',' ',' ','a',' ',' ',' ',' ','b',' ',' ',' ',' ','c',' ',' ',' ',' ','d',' ',' ',' ',' ','e',' ',' ',' ',' ','f',' ',' ',' ',' ','g',' ',' ',' ',' ','h',' ',' ',' ','\n'},
+        {' ',' ',white_dead_list[0].at(0),white_dead_list[0].at(1),' ',' ',white_dead_list[1].at(0),white_dead_list[1].at(1),' ',' ',white_dead_list[2].at(0),white_dead_list[2].at(1),' ',' ',white_dead_list[3].at(0),white_dead_list[3].at(1),' ',' ',white_dead_list[4].at(0),white_dead_list[4].at(1),' ',' ',white_dead_list[5].at(0),white_dead_list[5].at(1),' ',' ',white_dead_list[6].at(0),white_dead_list[6].at(1),' ',' ',white_dead_list[7].at(0),white_dead_list[7].at(1),' ',' ',white_dead_list[8].at(0),white_dead_list[8].at(1),' ',' ',white_dead_list[9].at(0),white_dead_list[9].at(1),' ',' ',' ','\n'},
+        {' ',' ',white_dead_list[10].at(0),white_dead_list[10].at(1),' ',' ',white_dead_list[11].at(0),white_dead_list[11].at(1),' ',' ',white_dead_list[12].at(0),white_dead_list[12].at(1),' ',' ',white_dead_list[13].at(0),white_dead_list[13].at(1),' ',' ',white_dead_list[14].at(0),white_dead_list[14].at(1),' ',' ',white_dead_list[15].at(0),white_dead_list[15].at(1),' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\n'}
     };
 
     for (int i = 0; i < PRINTED_BOARD_ROWS; i++){
@@ -134,7 +138,6 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
     }
 }
 
-// TODO need to check edge case where replacement wants to happen but dead list is empty
 
 
 MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
@@ -209,10 +212,13 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         } while (iterative_coord != end_coord);
 
         // check if we're removing a piece
-        if (end_piece.at(0) == 'W')
-            white_dead_list.push_back(end_piece);
-        if (end_piece.at(0) == 'B')
-            black_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'W'){
+            white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+            white_dead_list_idx++;
+        } else if (end_piece.at(0) == 'B'){
+            black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+            black_dead_list_idx++;
+        }
 
         // make move
         table[start_coord.first][start_coord.second] = "  ";
@@ -246,10 +252,13 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
             return MoveResult::Invalid;
 
         // check if we're removing a piece
-        if (end_piece.at(0) == 'W')
-            white_dead_list.push_back(end_piece);
-        if (end_piece.at(0) == 'B')
-            black_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'W'){
+            white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+            white_dead_list_idx++;
+        } else if (end_piece.at(0) == 'B'){
+            black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+            black_dead_list_idx++;
+        }
 
         // make move
         table[start_coord.first][start_coord.second] = "  ";
@@ -285,10 +294,13 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         } while (iterative_coord != end_coord);
 
         // check if we're removing a piece
-        if (end_piece.at(0) == 'W')
-            white_dead_list.push_back(end_piece);
-        if (end_piece.at(0) == 'B')
-            black_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'W'){
+            white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+            white_dead_list_idx++;
+        } else if (end_piece.at(0) == 'B'){
+            black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+            black_dead_list_idx++;
+        }
 
         // make move
         table[start_coord.first][start_coord.second] = "  ";
@@ -326,10 +338,13 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         } while (iterative_coord != end_coord);
 
         // check if we're removing a piece
-        if (end_piece.at(0) == 'W')
-            white_dead_list.push_back(end_piece);
-        if (end_piece.at(0) == 'B')
-            black_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'W'){
+            white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+            white_dead_list_idx++;
+        } else if (end_piece.at(0) == 'B'){
+            black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+            black_dead_list_idx++;
+        }
 
         // make move
         table[start_coord.first][start_coord.second] = "  ";
@@ -396,10 +411,13 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         }
 
         // if removing a piece, add it to dead list
-        if (end_piece.at(0) == 'W')
-            white_dead_list.push_back(end_piece);
-        else if (end_piece.at(0) == 'B')
-            black_dead_list.push_back(end_piece);
+        if (end_piece.at(0) == 'W'){
+            white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+            white_dead_list_idx++;
+        } else if (end_piece.at(0) == 'B'){
+            black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+            black_dead_list_idx++;
+        }
         
 
         // set king moved flag
@@ -443,9 +461,10 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
                 return MoveResult::Invalid;
 
             // piece at end_coordinate must be white
-            if (end_piece.at(0) == 'W')
-                white_dead_list.push_back(end_piece);
-            else 
+            if (end_piece.at(0) == 'W'){
+                white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+                white_dead_list_idx++;
+            } else 
                 return MoveResult::Invalid;
 
         } else if (move_vector.first == 1 && move_vector.second == -1){ // movement down and left
@@ -454,9 +473,10 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
                 return MoveResult::Invalid;
 
             // piece at end_coordinate must be white
-            if (end_piece.at(0) == 'W')
-                white_dead_list.push_back(end_piece);
-            else 
+            if (end_piece.at(0) == 'W'){
+                white_dead_list.insert(white_dead_list.begin()+white_dead_list_idx,end_piece);
+                white_dead_list_idx++;
+            } else 
                 return MoveResult::Invalid;
 
         } else if (move_vector.first == -1 && move_vector.second == 1){ // movement up and right
@@ -465,9 +485,10 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
                 return MoveResult::Invalid;
 
             // piece at end_coordinate must be black
-            if (end_piece.at(0) == 'B')
-                black_dead_list.push_back(end_piece);
-            else 
+            if (end_piece.at(0) == 'B'){
+                black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+                black_dead_list_idx++;
+            } else 
                 return MoveResult::Invalid;
 
         } else if (move_vector.first == -1 && move_vector.second == -1){ // movement up and left
@@ -476,9 +497,10 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
                 return MoveResult::Invalid;
 
             // piece at end_coordinate must be black
-            if (end_piece.at(0) == 'B')
-                black_dead_list.push_back(end_piece);
-            else 
+            if (end_piece.at(0) == 'B'){
+                black_dead_list.insert(black_dead_list.begin()+black_dead_list_idx,end_piece);
+                black_dead_list_idx++;
+            } else 
                 return MoveResult::Invalid;
         } else if (move_vector.first == 1 && move_vector.second == 0){ // movement down
             // check that pawn is black

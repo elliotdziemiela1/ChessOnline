@@ -5,7 +5,7 @@
 #include "utils.h"
 
 
-#define PRINTED_BOARD_ROWS 18
+#define PRINTED_BOARD_ROWS 22
 #define PRINTED_BOARD_COLS 44
 #define PRINTED_BOARD_SIZE PRINTED_BOARD_ROWS * PRINTED_BOARD_COLS
 
@@ -83,7 +83,7 @@ class Game {
         bool get_white_won();
         bool get_black_won();
         MoveResult make_move(char buf[DEFAULT_BUFLEN], char player_color); // makes a move and returns whether it was invalid, valid, or 
-        // if a pawn was moved to the otherside and needs to be replaced by a dead piece
+        // if a pawn was moved to the otherside and needs to be replaced
         void format_table_to_print(char buf[DEFAULT_BUFLEN]);
     private:
         bool WR1_moved, WR2_moved, WK_moved; // White rooks and white king-moved flags
@@ -98,4 +98,6 @@ class Game {
         std::vector<std::pair<int,int>> knight_move_vectors; // a map of all the valid movement vectors for a knight
 
         std::vector<std::string> white_dead_list, black_dead_list;
+        int white_dead_list_idx, black_dead_list_idx; // Dead lists will be initialized to a fixed size of 16, so we need to keep track of the
+        // insertion index since we cant just push_back().
 };
