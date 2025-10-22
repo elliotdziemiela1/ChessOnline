@@ -104,7 +104,7 @@ bool Game::get_white_won(){
     return white_won;
 }
 
-// writes the table in a pretty format to the given buffer.
+// Takes the table structure and the dead lists and compiles them into a pretty chess table inside the buffer passed in
 void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
     std::vector<std::vector<char>> pretty_table = {
         {' ',' ',black_dead_list[10].at(0),black_dead_list[10].at(1),' ',' ',black_dead_list[11].at(0),black_dead_list[11].at(1),' ',' ',black_dead_list[12].at(0),black_dead_list[12].at(1),' ',' ',black_dead_list[13].at(0),black_dead_list[13].at(1),' ',' ',black_dead_list[14].at(0),black_dead_list[14].at(1),' ',' ',black_dead_list[15].at(0),black_dead_list[15].at(1),' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','\n'},
@@ -138,6 +138,7 @@ void Game::format_table_to_print(char buf[DEFAULT_BUFLEN]){
     }
 }
 
+// quick helper function to validate user input for a pawn promotion
 bool Game::validate_promotion_input(char buf[DEFAULT_BUFLEN]){
     if ((buf[0]=='R' || buf[0]=='N' || buf[0]=='B' || buf[0]=='Q') && buf[1]=='\n' && buf[2]=='\0')
         return true;
@@ -145,6 +146,7 @@ bool Game::validate_promotion_input(char buf[DEFAULT_BUFLEN]){
         return false;
 }
 
+// Promotes pawn when it reaches the other side of the board
 void Game::promote_pawn(char new_piece){
     std::string replacement = "  ";
     if (replace_coordinates.first == 0) // if promoting a white pawn
@@ -155,6 +157,7 @@ void Game::promote_pawn(char new_piece){
     table[replace_coordinates.first][replace_coordinates.second] = replacement;
 }
 
+// makes a move and returns whether it was invalid, valid, or if a pawn was moved to the other side and needs to be promoted
 MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
     bool attempting_left_castle; // this will refer to castles on the left side of the board, i.e. BK and BR1, or WK and WR1
     bool attempting_right_castle; // this will refer to castles on the right side of the board, i.e. BK and BR2, or WK and WR2
@@ -571,16 +574,17 @@ MoveResult Game::make_move(char buf[DEFAULT_BUFLEN], char player_color){
         table[start_coord.first][start_coord.second] = "  ";
         table[end_coord.first][end_coord.second] = piece;
 
-        if (end_coord.first == 7 || end_coord.first == 0){ // if at the top or bottom of board, player will get to replace pawn
-            replace_coordinates = end_coord;
-            return MoveResult::ValidWithReplace;
-        }
-
         // check if game ends
         if (end_piece == "WK")
             black_won = true;
         else if (end_piece == "BK")
             white_won = true;
+            
+        if (end_coord.first == 7 || end_coord.first == 0){ // if at the top or bottom of board, player will get to replace pawn
+            replace_coordinates = end_coord;
+            return MoveResult::ValidWithReplace;
+        }
+
 
         return MoveResult::Valid;
     }
