@@ -12,8 +12,7 @@
                 "game.cpp",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-static-libgcc",
-                "-static-libstdc++",
+                "-static",
                 "-lws2_32"
             ],
             "options": {
